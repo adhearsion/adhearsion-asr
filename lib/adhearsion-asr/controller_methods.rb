@@ -14,6 +14,7 @@ module AdhearsionASR
     # Listens for speech input from the caller and matches against a collection of possible responses
     #
     # @param [Hash] :opts
+    # @option :opts [Object] :prompt a prompt to play while listening for input. Accepts anything that `Adhearsion::CallController#play does`.
     # @option :opts [Enumerable<String>] :options a collection of possible options
     # @option :opts [RubySpeech::GRXML::Grammar, String] :grammar a GRXML grammar
     # @option :opts [String] :grammar_url a URL to a grammar
@@ -36,10 +37,13 @@ module AdhearsionASR
         { value: grammar }
       end
       input_options = opts.merge(grammar: grammar_opts)
-      [:options, :grammar_url].each { |o| input_options.delete o }
+      prompt = opts.delete :prompt
+      [:prompt, :options, :grammar_url].each { |o| input_options.delete o }
 
       input_component = Punchblock::Component::Input.new input_options
-      execute_component_and_await_completion input_component
+      execute_component_and_await_completion input_component do
+        player.output Adhearsion::CallController::Output::Formatter.ssml_for(prompt) if prompt
+      end
 
       reason = input_component.complete_event.reason
 

@@ -31,7 +31,7 @@ module AdhearsionASR
       end
 
       def expect_component_execution(component, fail = false)
-        expectation = controller.should_receive(:execute_component_and_await_completion).once.with(component)
+        expectation = controller.should_receive(:execute_component_and_await_completion).once.ordered.with(component)
         if fail
           expectation.and_raise fail
         else
@@ -70,7 +70,7 @@ module AdhearsionASR
         def expect_component_complete_event(reason = nil)
           reason ||= Punchblock::Component::Input::Complete::Match.new :nlsml => nlsml
           complete_event = Punchblock::Event::Complete.new :reason => reason
-          Punchblock::Component::Input.any_instance.should_receive(:complete_event).and_return(complete_event)
+          Punchblock::Component::Input.any_instance.should_receive(:complete_event).at_least(:once).and_return(complete_event)
         end
 
         it "sends the correct input component" do
@@ -127,8 +127,34 @@ module AdhearsionASR
             result.status.should be == :nomatch
           end
         end
-      end
 
+        context "when interruptible output is provided" do
+          let(:prompt) { "Press 3 or 5 to make something happen." }
+
+          let(:ssml) do
+            RubySpeech::SSML.draw do
+              string "Press 3 or 5 to make something happen."
+            end
+          end
+
+          let(:output_component) do
+            Punchblock::Component::Output.new ssml: ssml
+          end
+
+          before do
+            reason ||= Punchblock::Component::Output::Complete::Success.new
+            complete_event = Punchblock::Event::Complete.new :reason => reason
+            Punchblock::Component::Output.any_instance.should_receive(:complete_event).at_least(:once).and_return(complete_event)
+          end
+
+          it "plays the correct output" do
+            expect_component_complete_event
+            expect_message_waiting_for_response input_component
+            expect_message_waiting_for_response output_component
+            subject.listen prompt: prompt, options: %w{yes no}
+          end
+        end
+      end
     end
   end
 end
