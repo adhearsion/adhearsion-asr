@@ -7,13 +7,12 @@ Gem::Specification.new do |s|
   s.version     = AdhearsionASR::VERSION
   s.authors     = ["Ben Langfeld"]
   s.email       = ["ben@langfeld.me"]
-  s.homepage    = ""
-  s.summary     = %q{TODO: Write a gem summary}
-  s.description = %q{TODO: Write a gem description}
+  s.homepage    = "https://github.com/adhearsion/adhearsion-asr"
+  s.summary     = %q{Adds speech recognition support to Adhearsion as a plugin}
+  s.description = %q{Adds speech recognition support to Adhearsion as a plugin}
 
   s.rubyforge_project = "adhearsion-asr"
 
-  # Use the following if using Git
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.require_paths = ["lib"]
