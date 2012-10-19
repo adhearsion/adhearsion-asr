@@ -59,16 +59,11 @@ module AdhearsionASR
           Punchblock::Component::Input.new :grammar => { :value => grxml }
         }
 
-        let(:nlsml) do
-          RubySpeech::NLSML.draw do
-            interpretation confidence: 1 do
-              input "yes", mode: :speech
-            end
-          end
-        end
+        let(:utterance) { 'yes' }
+        let(:interpretation) { 'yes' }
 
         def expect_component_complete_event(reason = nil)
-          reason ||= Punchblock::Component::Input::Complete::Match.new :nlsml => nlsml
+          reason ||= Punchblock::Component::Input::Complete::Success.new :utterance => utterance, :interpretation => interpretation
           complete_event = Punchblock::Event::Complete.new :reason => reason
           Punchblock::Component::Input.any_instance.should_receive(:complete_event).at_least(:once).and_return(complete_event)
         end
@@ -97,13 +92,12 @@ module AdhearsionASR
           expect { subject.listen }.to raise_error(ArgumentError, "You must provide a grammar, a grammar URL or a set of options")
         end
 
-        it "returns the interpretation as the response, the nlsml and a status of :match" do
+        it "returns the interpretation as the response and a status of :match" do
           expect_component_complete_event
           expect_component_execution input_component
           result = subject.listen options: %w{yes no}
           result.response.should be == 'yes'
           result.status.should be == :match
-          result.nlsml.should be == nlsml
         end
 
         context "with a nil timeout" do

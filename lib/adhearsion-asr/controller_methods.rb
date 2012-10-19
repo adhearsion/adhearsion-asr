@@ -49,10 +49,9 @@ module AdhearsionASR
 
       Result.new.tap do |result|
         case reason
-        when proc { |r| r.respond_to? :nlsml }
+        when proc { |r| r.respond_to? :utterance }
           result.response = reason.utterance
           result.status   = :match
-          result.nlsml    = reason.nlsml
         else
           result.status = :nomatch
         end
