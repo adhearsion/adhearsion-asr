@@ -18,6 +18,15 @@ module AdhearsionASR
     # @option :opts [Enumerable<String>] :options a collection of possible options
     # @option :opts [RubySpeech::GRXML::Grammar, String] :grammar a GRXML grammar
     # @option :opts [String] :grammar_url a URL to a grammar
+    # @option :opts [Integer, optional] :max_silence the amount of time in milliseconds that an input command will wait until considered that a silence becomes a NO-MATCH
+    # @option :opts [Float, optional] :min_confidence with which to consider a response acceptable
+    # @option :opts [Symbol, optional] :mode by which to accept input. Can be :speech, :dtmf or :any
+    # @option :opts [String, optional] :recognizer to use for speech recognition
+    # @option :opts [String, optional] :terminator by which to signal the end of input
+    # @option :opts [Float, optional] :sensitivity Indicates how sensitive the interpreter should be to loud versus quiet input. Higher values represent greater sensitivity.
+    # @option :opts [Integer, optional] :initial_timeout Indicates the amount of time preceding input which may expire before a timeout is triggered.
+    # @option :opts [Integer, optional] :inter_digit_timeout Indicates (in the case of DTMF input) the amount of time between input digits which may expire before a timeout is triggered.
+    #
     #
     def listen(opts = {})
       raise ArgumentError, "You must provide a grammar, a grammar URL or a set of options" unless opts[:grammar] || opts[:grammar_url] || opts[:options].respond_to?(:each)
