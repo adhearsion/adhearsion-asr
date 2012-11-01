@@ -25,7 +25,7 @@ end
 
 ## Author
 
-[Ben Klang](https://github.com/bklang)
+[Ben Langfeld](https://github.com/benlangfeld)
 
 ### Contributions
 
