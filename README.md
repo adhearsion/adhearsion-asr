@@ -23,6 +23,11 @@ class MyController < Adhearsion::CallController
 end
 ```
 
+## Links:
+* [Source](https://github.com/adhearsion/adhearsion-asr)
+* [Documentation](http://rdoc.info/github/adhearsion/adhearsion-asr/master/frames)
+* [Bug Tracker](https://github.com/adhearsion/adhearsion-asr/issues)
+
 ## Author
 
 [Ben Langfeld](https://github.com/benlangfeld)
