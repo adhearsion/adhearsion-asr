@@ -45,7 +45,7 @@ module AdhearsionASR
 
       describe "#listen" do
         let(:grxml) {
-          RubySpeech::GRXML.draw :root => 'main' do
+          RubySpeech::GRXML.draw :root => 'main', :language => 'en-us' do
             rule id: 'main', scope: 'public' do
               one_of do
                 item { 'yes' }
@@ -91,6 +91,20 @@ module AdhearsionASR
           input_component = Punchblock::Component::Input.new :grammar => { :url => url }
           expect_component_execution input_component
           subject.listen grammar_url: url
+        end
+
+        it "should default the recognition language to 'en-us'" do
+          controller.should_receive(:execute_component_and_await_completion).once.ordered do |component|
+            grammar['lang'].should == 'en-us'
+          end
+          subject.listen options: {'foo' => :bar}
+        end
+
+        it "allows specifying a recognition language" do
+          controller.should_receive(:execute_component_and_await_completion).once.ordered do |grammar|
+            grammar['lang'].should == 'en-gb'
+          end
+          subject.listen options: {'foo' => :bar}, language: 'en-gb'
         end
 
         it "raises ArgumentError when not provided options, a grammar or a grammar URL" do
