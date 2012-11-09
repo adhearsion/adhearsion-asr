@@ -66,9 +66,11 @@ module AdhearsionASR
         execute_component_and_await_completion input_component
       end
 
-      call.after(timeout) do
-        logger.debug "Timeout triggered, halting input component"
-        input_component.stop! unless input_component.complete?
+      if timeout
+        call.after(timeout) do
+          logger.debug "Timeout triggered, halting input component"
+          input_component.stop! unless input_component.complete?
+        end
       end
 
       reason = input_component.complete_event.reason
