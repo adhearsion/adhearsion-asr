@@ -50,8 +50,18 @@ module AdhearsionASR
       [:prompt, :options, :grammar_url].each { |o| input_options.delete o }
 
       input_component = Punchblock::Component::Input.new input_options
-      execute_component_and_await_completion input_component do
-        player.output Adhearsion::CallController::Output::Formatter.ssml_for(prompt) if prompt
+
+      if prompt
+        player.output Adhearsion::CallController::Output::Formatter.ssml_for(prompt) do |output_component|
+          input_component.register_event_handler Punchblock::Event::Complete do |event|
+            unless output_component.complete?
+              output_component.stop!
+            end
+          end
+          write_and_await_response input_component
+        end
+      else
+        execute_component_and_await_completion input_component
       end
 
       reason = input_component.complete_event.reason

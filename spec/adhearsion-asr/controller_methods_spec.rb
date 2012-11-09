@@ -141,7 +141,7 @@ module AdhearsionASR
             Punchblock::Component::Output.new ssml: ssml
           end
 
-          before do
+          def expect_output_completion
             reason ||= Punchblock::Component::Output::Complete::Success.new
             complete_event = Punchblock::Event::Complete.new :reason => reason
             Punchblock::Component::Output.any_instance.should_receive(:complete_event).at_least(:once).and_return(complete_event)
@@ -149,6 +149,7 @@ module AdhearsionASR
 
           it "plays the correct output" do
             expect_component_complete_event
+            expect_output_completion
             expect_message_waiting_for_response input_component
             expect_message_waiting_for_response output_component
             subject.listen prompt: prompt, options: %w{yes no}
