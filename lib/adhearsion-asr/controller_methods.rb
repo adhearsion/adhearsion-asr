@@ -26,7 +26,7 @@ module AdhearsionASR
     # @option :opts [Float, optional] :sensitivity Indicates how sensitive the interpreter should be to loud versus quiet input. Higher values represent greater sensitivity.
     # @option :opts [Integer, optional] :initial_timeout Indicates the amount of time preceding input which may expire before a timeout is triggered.
     # @option :opts [Integer, optional] :inter_digit_timeout Indicates (in the case of DTMF input) the amount of time between input digits which may expire before a timeout is triggered.
-    #
+    # @option :opts [Integer, optional] :timeout Times out the grammar (and terminates output) if no response after this value in seconds
     #
     def listen(opts = {})
       raise ArgumentError, "You must provide a grammar, a grammar URL or a set of options" unless opts[:grammar] || opts[:grammar_url] || opts[:options].respond_to?(:each)
@@ -47,7 +47,8 @@ module AdhearsionASR
       end
       input_options = opts.merge(grammar: grammar_opts)
       prompt = opts.delete :prompt
-      [:prompt, :options, :grammar_url].each { |o| input_options.delete o }
+      timeout = opts.delete :timeout
+      [:prompt, :options, :grammar_url, :timeout].each { |o| input_options.delete o }
 
       input_component = Punchblock::Component::Input.new input_options
 
@@ -62,6 +63,13 @@ module AdhearsionASR
         end
       else
         execute_component_and_await_completion input_component
+      end
+
+      output_component.complete_event
+
+      call.after(timeout) do
+        logger.debug "Timeout triggered, halting input component"
+        input_component.stop! unless input_component.complete?
       end
 
       reason = input_component.complete_event.reason
