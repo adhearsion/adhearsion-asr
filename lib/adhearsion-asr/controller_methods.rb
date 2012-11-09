@@ -53,7 +53,7 @@ module AdhearsionASR
       input_component = Punchblock::Component::Input.new input_options
 
       if prompt
-        player.output Adhearsion::CallController::Output::Formatter.ssml_for(prompt) do |output_component|
+        output = player.output Adhearsion::CallController::Output::Formatter.ssml_for(prompt) do |output_component|
           input_component.register_event_handler Punchblock::Event::Complete do |event|
             unless output_component.complete?
               output_component.stop!
@@ -61,11 +61,10 @@ module AdhearsionASR
           end
           write_and_await_response input_component
         end
+        output.complete_event
       else
         execute_component_and_await_completion input_component
       end
-
-      output_component.complete_event
 
       call.after(timeout) do
         logger.debug "Timeout triggered, halting input component"
