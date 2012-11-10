@@ -170,7 +170,10 @@ module AdhearsionASR
               expect_output_completion
               expect_message_waiting_for_response input_component
               expect_message_waiting_for_response output_component
-              subject.listen prompt: prompts, options: %w{yes no}
+              original_options = {prompt: prompts, options: %w{yes no}}
+              options = original_options.dup
+              subject.listen options
+              options.should == original_options
             end
           end
         end

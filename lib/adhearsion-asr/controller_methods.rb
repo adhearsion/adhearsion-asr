@@ -29,6 +29,7 @@ module AdhearsionASR
     # @option :opts [Integer, optional] :timeout Times out the grammar (and terminates output) if no response after this value in seconds
     #
     def listen(opts = {})
+      opts = opts.dup
       raise ArgumentError, "You must provide a grammar, a grammar URL or a set of options" unless opts[:grammar] || opts[:grammar_url] || opts[:options].respond_to?(:each)
       grammar_opts = if opts[:grammar_url]
         { url: opts[:grammar_url] }
