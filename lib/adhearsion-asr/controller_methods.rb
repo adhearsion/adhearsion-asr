@@ -45,7 +45,7 @@ module AdhearsionASR
         end
         { value: grammar }
       end
-      input_options = opts.merge(grammar: grammar_opts)
+      input_options = opts.merge(grammar: grammar_opts, min_confidence: AdhearsionASR::Plugin.config[:min_confidence])
       prompts = Array(opts.delete :prompt)
       [:prompt, :options, :grammar_url].each { |o| input_options.delete o }
 
