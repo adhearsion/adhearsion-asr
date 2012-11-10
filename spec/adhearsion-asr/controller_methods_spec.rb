@@ -56,7 +56,7 @@ module AdhearsionASR
         }
 
         let(:input_component) {
-          Punchblock::Component::Input.new :grammar => { :value => grxml }
+          Punchblock::Component::Input.new grammar: { value: grxml }, min_confidence: 0.5
         }
 
         let(:nlsml) do
@@ -88,7 +88,7 @@ module AdhearsionASR
         it "can execute a grammar by url" do
           expect_component_complete_event
           url = "http://foo.com/bar.grxml"
-          input_component = Punchblock::Component::Input.new :grammar => { :url => url }
+          input_component = Punchblock::Component::Input.new grammar: { url: url }, min_confidence: 0.5
           expect_component_execution input_component
           subject.listen grammar_url: url
         end
