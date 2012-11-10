@@ -154,6 +154,25 @@ module AdhearsionASR
             expect_message_waiting_for_response output_component
             subject.listen prompt: prompt, options: %w{yes no}
           end
+
+          context "with a collection of prompts" do
+            let(:prompts) { ["/srv/foo.mp3", "Press 3 or 5 to make something happen."] }
+
+            let(:ssml) do
+              RubySpeech::SSML.draw do
+                audio src: '/srv/foo.mp3'
+                string "Press 3 or 5 to make something happen."
+              end
+            end
+
+            it "plays all prompts concatenated" do
+              expect_component_complete_event
+              expect_output_completion
+              expect_message_waiting_for_response input_component
+              expect_message_waiting_for_response output_component
+              subject.listen prompt: prompts, options: %w{yes no}
+            end
+          end
         end
       end
     end

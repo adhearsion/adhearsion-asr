@@ -46,14 +46,14 @@ module AdhearsionASR
         { value: grammar }
       end
       input_options = opts.merge(grammar: grammar_opts)
-      prompt = opts.delete :prompt
+      prompts = Array(opts.delete :prompt)
       timeout = opts.delete :timeout
       [:prompt, :options, :grammar_url, :timeout].each { |o| input_options.delete o }
 
       input_component = Punchblock::Component::Input.new input_options
 
-      if prompt
-        output = player.output Adhearsion::CallController::Output::Formatter.ssml_for(prompt) do |output_component|
+      if prompts.any?
+        output = player.output Adhearsion::CallController::Output::Formatter.ssml_for_collection(prompts) do |output_component|
           input_component.register_event_handler Punchblock::Event::Complete do |event|
             unless output_component.complete?
               output_component.stop!
