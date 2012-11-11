@@ -67,10 +67,11 @@ module AdhearsionASR
           end
         end
 
-        def expect_component_complete_event(reason = nil)
-          reason ||= Punchblock::Component::Input::Complete::Match.new :nlsml => nlsml
-          complete_event = Punchblock::Event::Complete.new :reason => reason
-          Punchblock::Component::Input.any_instance.should_receive(:complete_event).at_least(:once).and_return(complete_event)
+        let(:input_complete_reason) { Punchblock::Component::Input::Complete::Match.new nlsml: nlsml }
+        let(:input_complete_event)  { Punchblock::Event::Complete.new reason: input_complete_reason }
+
+        def expect_component_complete_event
+          Punchblock::Component::Input.any_instance.should_receive(:complete_event).at_least(:once).and_return(input_complete_event)
         end
 
         it "sends the correct input component" do
@@ -107,11 +108,10 @@ module AdhearsionASR
         end
 
         context "when a nomatch occurrs" do
-          before do
-            expect_component_complete_event Punchblock::Component::Input::Complete::NoMatch.new
-          end
+          let(:input_complete_reason) { Punchblock::Component::Input::Complete::NoMatch.new }
 
           it "should return a response of nil and a status of nomatch" do
+            expect_component_complete_event
             expect_component_execution input_component
             result = subject.listen options: %w{yes no}
             result.response.should be nil
@@ -132,10 +132,13 @@ module AdhearsionASR
             Punchblock::Component::Output.new ssml: ssml
           end
 
+          let(:output_complete_event) do
+            reason = Punchblock::Component::Output::Complete::Success.new
+            Punchblock::Event::Complete.new reason: reason
+          end
+
           def expect_output_completion
-            reason ||= Punchblock::Component::Output::Complete::Success.new
-            complete_event = Punchblock::Event::Complete.new :reason => reason
-            Punchblock::Component::Output.any_instance.should_receive(:complete_event).at_least(:once).and_return(complete_event)
+            Punchblock::Component::Output.any_instance.should_receive(:complete_event).at_least(:once).and_return(output_complete_event)
           end
 
           it "plays the correct output" do
@@ -144,6 +147,37 @@ module AdhearsionASR
             expect_message_waiting_for_response input_component
             expect_message_waiting_for_response output_component
             subject.listen prompt: prompt, options: %w{yes no}
+          end
+
+          it "should terminate the output when the input completes" do
+            latch = CountDownLatch.new 1
+
+            expect_message_waiting_for_response input_component
+            input_component.request!
+            input_component.execute!
+            Punchblock::Component::Input.should_receive(:new).and_return(input_component)
+            expect_message_waiting_for_response output_component
+            output_component.request!
+            output_component.execute!
+            Punchblock::Component::Output.should_receive(:new).and_return(output_component)
+
+            thread = Thread.new do
+              result = subject.listen prompt: prompt, options: %w{yes no}
+              latch.countdown!
+              result
+            end
+            latch.wait(1).should be_false
+
+            output_component.should_receive(:stop!).once do
+              output_component.add_event output_complete_event
+            end
+
+            input_component.add_event input_complete_event
+            input_component.trigger_event_handler input_complete_event
+
+            latch.wait(1).should be_true
+
+            thread.join.should_not be_nil
           end
 
           context "with a collection of prompts" do
