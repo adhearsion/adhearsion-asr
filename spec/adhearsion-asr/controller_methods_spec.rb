@@ -106,15 +106,6 @@ module AdhearsionASR
           result.nlsml.should be == nlsml
         end
 
-        context "with a nil timeout" do
-          it "does not set a timeout on the component" do
-            pending
-            expect_component_complete_event
-            expect_component_execution input_component
-            subject.wait_for_digit timeout
-          end
-        end
-
         context "when a nomatch occurrs" do
           before do
             expect_component_complete_event Punchblock::Component::Input::Complete::NoMatch.new
