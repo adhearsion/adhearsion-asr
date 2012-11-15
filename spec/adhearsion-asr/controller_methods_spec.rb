@@ -99,7 +99,7 @@ module AdhearsionASR
             grammar = component.grammar.value
             grammar['lang'].should == 'en-us'
           end
-          subject.listen options: {'foo' => :bar}
+          subject.listen options: %w{yes no}
         end
 
         it "allows specifying a recognition language" do
@@ -108,7 +108,7 @@ module AdhearsionASR
             grammar = component.grammar.value
             grammar['lang'].should == 'en-gb'
           end
-          subject.listen options: {'foo' => :bar}, language: 'en-gb'
+          subject.listen options: %w{yes no}, language: 'en-gb'
         end
 
         it "raises ArgumentError when not provided options, a grammar or a grammar URL" do
