@@ -94,6 +94,7 @@ module AdhearsionASR
         end
 
         it "should default the recognition language to 'en-us'" do
+          expect_component_complete_event
           controller.should_receive(:execute_component_and_await_completion).once.ordered do |component|
             grammar = component.grammar.value
             grammar['lang'].should == 'en-us'
@@ -102,6 +103,7 @@ module AdhearsionASR
         end
 
         it "allows specifying a recognition language" do
+          expect_component_complete_event
           controller.should_receive(:execute_component_and_await_completion).once.ordered do |component|
             grammar = component.grammar.value
             grammar['lang'].should == 'en-gb'
