@@ -89,7 +89,7 @@ module AdhearsionASR
         it "can execute a grammar by url" do
           expect_component_complete_event
           url = "http://foo.com/bar.grxml"
-          input_component = Punchblock::Component::Input.new grammar: { url: url }, min_confidence: 0.5
+          input_component.grammar = {url: url}
           expect_component_execution input_component
           subject.listen grammar_url: url
         end
@@ -110,6 +110,13 @@ module AdhearsionASR
             grammar['lang'].should == 'en-gb'
           end
           subject.listen options: %w{yes no}, language: 'en-gb'
+        end
+
+        it "allows specifying a min confidence" do
+          expect_component_complete_event
+          input_component.min_confidence = 0.1
+          expect_component_execution input_component
+          subject.listen options: %w{yes no}, min_confidence: 0.1
         end
 
         it "raises ArgumentError when not provided options, a grammar or a grammar URL" do

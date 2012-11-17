@@ -35,7 +35,7 @@ module AdhearsionASR
         { url: opts[:grammar_url] }
       else
         language = opts.delete(:language) || AdhearsionASR::Plugin.config[:language]
-        grammar = opts[:grammar]
+        grammar = opts.delete(:grammar)
         grammar ||= RubySpeech::GRXML.draw root: 'main', language: language do
           rule id: 'main', scope: 'public' do
             one_of do
@@ -47,7 +47,7 @@ module AdhearsionASR
         end
         { value: grammar }
       end
-      input_options = opts.merge(grammar: grammar_opts, min_confidence: AdhearsionASR::Plugin.config[:min_confidence])
+      input_options = {grammar: grammar_opts, min_confidence: AdhearsionASR::Plugin.config[:min_confidence]}.merge(opts)
       prompts = Array(opts.delete :prompt)
       timeout = opts.has_key?(:timeout) ? opts.delete(:timeout) : AdhearsionASR::Plugin.config[:timeout]
       [:prompt, :options, :grammar_url, :timeout].each { |o| input_options.delete o }
