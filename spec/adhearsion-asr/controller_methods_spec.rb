@@ -56,7 +56,7 @@ module AdhearsionASR
         }
 
         let(:input_component) {
-          Punchblock::Component::Input.new grammar: { value: grxml }, min_confidence: 0.5
+          Punchblock::Component::Input.new grammar: { value: grxml }, min_confidence: 0.5, recognizer: 'en-us'
         }
 
         let(:nlsml) do
@@ -110,6 +110,13 @@ module AdhearsionASR
             grammar['lang'].should == 'en-gb'
           end
           subject.listen options: %w{yes no}, language: 'en-gb'
+        end
+
+        it "allows specifying a recognizer" do
+          expect_component_complete_event
+          input_component.recognizer = 'pt-BR'
+          expect_component_execution input_component
+          subject.listen options: %w{yes no}, recognizer: 'pt-BR'
         end
 
         it "allows specifying a min confidence" do
