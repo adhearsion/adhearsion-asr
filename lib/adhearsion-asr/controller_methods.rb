@@ -34,7 +34,7 @@ module AdhearsionASR
       grammar_opts = if opts[:grammar_url]
         { url: opts[:grammar_url] }
       else
-        language = opts.delete(:language) || 'en-us'
+        language = opts.delete(:language) || AdhearsionASR::Plugin.config[:language]
         grammar = opts[:grammar]
         grammar ||= RubySpeech::GRXML.draw root: 'main', language: language do
           rule id: 'main', scope: 'public' do
