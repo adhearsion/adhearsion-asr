@@ -151,6 +151,28 @@ module AdhearsionASR
           end
         end
 
+        context "when a noinput occurrs" do
+          let(:input_complete_reason) { Punchblock::Component::Input::Complete::NoInput.new }
+
+          it "should return a response of nil and a status of noinput" do
+            expect_component_complete_event
+            expect_component_execution input_component
+            result = subject.listen options: %w{yes no}
+            result.response.should be nil
+            result.status.should be == :noinput
+          end
+        end
+
+        context "when an error occurrs" do
+          let(:input_complete_reason) { Punchblock::Event::Complete::Error.new details: 'foobar' }
+
+          it "should raise an error with a message of 'foobar" do
+            expect_component_complete_event
+            expect_component_execution input_component
+            expect { subject.listen options: %w{yes no} }.to raise_error(AdhearsionASR::ListenError, /foobar/)
+          end
+        end
+
         context "when interruptible output is provided" do
           let(:prompt) { "Press 3 or 5 to make something happen." }
 

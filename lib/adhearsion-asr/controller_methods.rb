@@ -1,12 +1,12 @@
 module AdhearsionASR
   module ControllerMethods
-    Result = Struct.new(:response, :status, :nlsml) do
+    Result = Struct.new(:response, :status, :nlsml, :message) do
       def to_s
         response
       end
 
       def inspect
-        "#<#{self.class} response=#{response.inspect}, status=#{status.inspect}, nlsml=#{nlsml.inspect}>"
+        "#<#{self.class} response=#{response.inspect}, status=#{status.inspect}, nlsml=#{nlsml.inspect}, message=#{message}>"
       end
     end
 
@@ -83,8 +83,12 @@ module AdhearsionASR
           result.response = reason.utterance
           result.status   = :match
           result.nlsml    = reason.nlsml
+        when Punchblock::Event::Complete::Error
+          raise ListenError, reason.details
+        when Punchblock::Event::Complete::Reason
+          result.status = reason.name
         else
-          result.status = :nomatch
+          raise "Unknown completion reason received: #{reason}"
         end
       end
     end
