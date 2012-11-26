@@ -63,6 +63,10 @@ module AdhearsionASR
           RubySpeech::NLSML.draw do
             interpretation confidence: 1 do
               input "yes", mode: :speech
+
+              instance do
+                boo 'baz'
+              end
             end
           end
         end
@@ -130,11 +134,12 @@ module AdhearsionASR
           expect { subject.listen }.to raise_error(ArgumentError, "You must provide a grammar, a grammar URL or a set of options")
         end
 
-        it "returns the interpretation as the response, the nlsml and a status of :match" do
+        it "returns the utterance as the response, the instance hash as the interpretation, the nlsml and a status of :match" do
           expect_component_complete_event
           expect_component_execution input_component
           result = subject.listen options: %w{yes no}
           result.response.should be == 'yes'
+          result.interpretation.should be == {boo: 'baz'}
           result.status.should be == :match
           result.nlsml.should be == nlsml
         end
@@ -147,6 +152,7 @@ module AdhearsionASR
             expect_component_execution input_component
             result = subject.listen options: %w{yes no}
             result.response.should be nil
+            result.interpretation.should be nil
             result.status.should be == :nomatch
           end
         end
@@ -159,6 +165,7 @@ module AdhearsionASR
             expect_component_execution input_component
             result = subject.listen options: %w{yes no}
             result.response.should be nil
+            result.interpretation.should be nil
             result.status.should be == :noinput
           end
         end

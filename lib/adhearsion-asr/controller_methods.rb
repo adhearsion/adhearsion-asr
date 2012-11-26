@@ -1,12 +1,12 @@
 module AdhearsionASR
   module ControllerMethods
-    Result = Struct.new(:response, :status, :nlsml, :message) do
+    Result = Struct.new(:response, :status, :nlsml, :message, :interpretation) do
       def to_s
         response
       end
 
       def inspect
-        "#<#{self.class} response=#{response.inspect}, status=#{status.inspect}, nlsml=#{nlsml.inspect}, message=#{message}>"
+        "#<#{self.class} response=#{response.inspect}, interpretation=#{interpretation.inspect}, status=#{status.inspect}, nlsml=#{nlsml.inspect}, message=#{message}>"
       end
     end
 
@@ -80,9 +80,10 @@ module AdhearsionASR
       Result.new.tap do |result|
         case reason
         when proc { |r| r.respond_to? :nlsml }
-          result.response = reason.utterance
-          result.status   = :match
-          result.nlsml    = reason.nlsml
+          result.response       = reason.utterance
+          result.interpretation = reason.interpretation
+          result.status         = :match
+          result.nlsml          = reason.nlsml
         when Punchblock::Event::Complete::Error
           raise ListenError, reason.details
         when Punchblock::Event::Complete::Reason
