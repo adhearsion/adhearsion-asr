@@ -190,7 +190,7 @@ module AdhearsionASR
           end
 
           let(:output_component) do
-            Punchblock::Component::Output.new ssml: ssml
+            Punchblock::Component::Output.new ssml: ssml, interrupt_on: :speech
           end
 
           let(:output_complete_event) do
