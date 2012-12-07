@@ -149,7 +149,7 @@ module AdhearsionASR
           expect_component_execution input_component
           mock_logger = mock("mock logger")
           subject.should_receive(:logger).and_return mock_logger
-          mock_logger.should_receive(:debug).with "Received input 'yes' with confidence 100"
+          mock_logger.should_receive(:debug).with "Received input 'yes' with confidence 1.0"
           subject.listen options: %w{yes no}
         end
 

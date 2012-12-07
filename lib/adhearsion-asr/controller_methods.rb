@@ -78,10 +78,7 @@ module AdhearsionASR
       reason = input_component.complete_event.reason
 
       if reason.respond_to? :nlsml
-        nlsml = Nokogiri::XML reason.nlsml.to_xml
-        confidence = nlsml.xpath("//xmlns:interpretation")[0]['confidence']
-        input = nlsml.xpath("//xmlns:input")[0].inner_text
-        logger.debug "Received input '#{input}' with confidence #{confidence}"
+        logger.debug "Received input '#{reason.nlsml.best_interpretation[:input][:content]}' with confidence #{reason.nlsml.best_interpretation[:confidence]}"
       end
 
       Result.new.tap do |result|
