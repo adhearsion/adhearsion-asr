@@ -78,7 +78,7 @@ module AdhearsionASR
       reason = input_component.complete_event.reason
 
       if reason.respond_to? :nlsml
-        logger.debug "Received input '#{reason.nlsml.best_interpretation[:input][:content]}' with confidence #{reason.nlsml.best_interpretation[:confidence]}"
+        logger.debug "Received input '#{reason.utterance}' with confidence #{reason.nlsml.best_interpretation[:confidence]}"
       end
 
       Result.new.tap do |result|
