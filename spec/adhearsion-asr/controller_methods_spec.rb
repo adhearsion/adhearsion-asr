@@ -134,11 +134,12 @@ module AdhearsionASR
           expect { subject.listen }.to raise_error(ArgumentError, "You must provide a grammar, a grammar URL or a set of options")
         end
 
-        it "returns the utterance as the response, the instance hash as the interpretation, the nlsml and a status of :match" do
+        it "returns the utterance as the response, the confidence as a number between 0 and 1, the instance hash as the interpretation, the nlsml and a status of :match" do
           expect_component_complete_event
           expect_component_execution input_component
           result = subject.listen options: %w{yes no}
           result.response.should be == 'yes'
+          result.confidence.should be == 1.0
           result.interpretation.should be == {boo: 'baz'}
           result.status.should be == :match
           result.nlsml.should be == nlsml

@@ -1,6 +1,6 @@
 module AdhearsionASR
   module ControllerMethods
-    Result = Struct.new(:response, :status, :nlsml, :message, :interpretation) do
+    Result = Struct.new(:response, :confidence, :status, :nlsml, :message, :interpretation) do
       def to_s
         response
       end
@@ -77,17 +77,15 @@ module AdhearsionASR
 
       reason = input_component.complete_event.reason
 
-      if reason.respond_to? :nlsml
-        logger.debug "Received input '#{reason.utterance}' with confidence #{reason.nlsml.best_interpretation[:confidence]}"
-      end
-
       Result.new.tap do |result|
         case reason
         when proc { |r| r.respond_to? :nlsml }
           result.response       = reason.utterance
+          result.confidence     = reason.confidence
           result.interpretation = reason.interpretation
           result.status         = :match
           result.nlsml          = reason.nlsml
+          logger.debug "Received input '#{result.response}' with confidence #{result.confidence}"
         when Punchblock::Event::Complete::Error
           raise ListenError, reason.details
         when Punchblock::Event::Complete::Reason
