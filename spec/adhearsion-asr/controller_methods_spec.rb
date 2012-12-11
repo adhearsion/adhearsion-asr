@@ -78,6 +78,10 @@ module AdhearsionASR
           Punchblock::Component::Input.any_instance.should_receive(:complete_event).at_least(:once).and_return(input_complete_event)
         end
 
+        before do
+          @mock_logger = mock("mock logger")
+        end
+
         it "sends the correct input component" do
           expect_component_complete_event
           expect_component_execution input_component
@@ -148,18 +152,19 @@ module AdhearsionASR
         it "should log the results to DEBUG" do
           expect_component_complete_event
           expect_component_execution input_component
-          mock_logger = mock("mock logger")
-          subject.should_receive(:logger).and_return mock_logger
-          mock_logger.should_receive(:debug).with "Received input 'yes' with confidence 1.0"
+          subject.should_receive(:logger).and_return @mock_logger
+          @mock_logger.should_receive(:debug).with "Received input 'yes' with confidence 1.0"
           subject.listen options: %w{yes no}
         end
 
         context "when a nomatch occurrs" do
           let(:input_complete_reason) { Punchblock::Component::Input::Complete::NoMatch.new }
 
-          it "should return a response of nil and a status of nomatch" do
+          it "should return a response of nil, a status of nomatch, and log the nomatch to DEBUG" do
             expect_component_complete_event
             expect_component_execution input_component
+            subject.should_receive(:logger).and_return @mock_logger
+            @mock_logger.should_receive(:debug).with "Listen has completed with status 'nomatch'"
             result = subject.listen options: %w{yes no}
             result.response.should be nil
             result.interpretation.should be nil
@@ -170,9 +175,11 @@ module AdhearsionASR
         context "when a noinput occurrs" do
           let(:input_complete_reason) { Punchblock::Component::Input::Complete::NoInput.new }
 
-          it "should return a response of nil and a status of noinput" do
+          it "should return a response of nil, a status of noinput, and log the noinput to DEBUG" do
             expect_component_complete_event
             expect_component_execution input_component
+            subject.should_receive(:logger).and_return @mock_logger
+            @mock_logger.should_receive(:debug).with "Listen has completed with status 'noinput'"
             result = subject.listen options: %w{yes no}
             result.response.should be nil
             result.interpretation.should be nil

@@ -90,6 +90,7 @@ module AdhearsionASR
           raise ListenError, reason.details
         when Punchblock::Event::Complete::Reason
           result.status = reason.name
+          logger.debug "Listen has completed with status '#{result.status}'"
         else
           raise "Unknown completion reason received: #{reason}"
         end
