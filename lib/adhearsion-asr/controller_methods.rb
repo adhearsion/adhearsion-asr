@@ -55,7 +55,7 @@ module AdhearsionASR
       input_component = Punchblock::Component::Input.new input_options
 
       if prompts.any?
-        output = player.output Adhearsion::CallController::Output::Formatter.ssml_for_collection(prompts), interrupt_on: :speech do |output_component|
+        output = player.output Adhearsion::CallController::Output::Formatter.ssml_for_collection(prompts) do |output_component|
           input_component.register_event_handler Punchblock::Event::Complete do |event|
             unless output_component.complete?
               output_component.stop!
