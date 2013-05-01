@@ -14,7 +14,7 @@ module AdhearsionASR
       subject { controller }
 
       before do
-        mock call, :write_command => true, :id => call_id
+        mock call, write_command: true, id: call_id
       end
 
       def expect_message_waiting_for_response(message, fail = false)
@@ -46,7 +46,7 @@ module AdhearsionASR
       describe "#listen" do
         before { pending }
         let(:grxml) {
-          RubySpeech::GRXML.draw :root => 'main', :language => 'en-us' do
+          RubySpeech::GRXML.draw root: 'main', language: 'en-us' do
             rule id: 'main', scope: 'public' do
               one_of do
                 item { 'yes' }
