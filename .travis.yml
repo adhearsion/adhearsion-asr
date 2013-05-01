@@ -1,10 +1,10 @@
 language: ruby
-script: bundle exec rake
 rvm:
   - 1.9.2
   - 1.9.3
-  # - jruby-19mode # JRuby in 1.9 mode
-  # - rbx-19mode # currently in active development, may or may not work for your project
-  # - ruby-head
+  - 2.0.0
+  - jruby-19mode
+  - rbx-19mode
+  - ruby-head
 notifications:
   irc: "irc.freenode.org#adhearsion"
