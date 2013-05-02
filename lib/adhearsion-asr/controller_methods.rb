@@ -1,12 +1,89 @@
 module AdhearsionASR
   module ControllerMethods
-    Result = Struct.new(:response, :confidence, :status, :nlsml, :message, :interpretation) do
+
+    DEFAULT_TIMEOUT = 5
+
+    Result = Struct.new(:status, :confidence, :response, :interpretation, :nlsml) do
       def to_s
         response
       end
 
       def inspect
-        "#<#{self.class} response=#{response.inspect}, interpretation=#{interpretation.inspect}, status=#{status.inspect}, nlsml=#{nlsml.inspect}, message=#{message}>"
+        "#<#{self.class} status=#{status.inspect}, confidence=#{confidence.inspect}, response=#{response.inspect}, interpretation=#{interpretation.inspect}, nlsml=#{nlsml.inspect}>"
+      end
+    end
+
+    #
+    # Prompts for input via DTMF, handling playback of prompts,
+    # timeouts, digit limits and terminator digits.
+    #
+    # @example A basic digit collection:
+    #   ask "Welcome, ", "/opt/sounds/menu-prompt.mp3",
+    #       timeout: 10, terminator: '#', limit: 3
+    #
+    # The first arguments will be a list of sounds to play, as accepted by #play, including strings for TTS, Date and Time objects, and file paths.
+    # :timeout, :terminator and :limit options may then be specified.
+    #
+    # @param [Object, Array<Object>] args A list of outputs to play, as accepted by #play
+    # @param [Hash] options Options to use for the menu
+    # @option options [Boolean] :interruptible If the prompt should be interruptible or not. Defaults to true
+    # @option options [Integer] :limit Digit limit (causes collection to cease after a specified number of digits have been collected)
+    # @option options [Integer] :timeout Timeout in seconds before the first and between each input digit
+    # @option options [String] :terminator Digit to terminate input
+    #
+    # @return [Result] a result object from which the #response and #status may be established
+    #
+    # @see Output#play
+    #
+    def ask(*args, &block)
+      options = args.last.kind_of?(Hash) ? args.pop : {}
+      prompts = args.flatten
+
+      options[:limit] || options[:terminator] || raise(ArgumentError, "You must specify at least one of limit or terminator")
+
+      grammar = RubySpeech::GRXML.draw mode: 'dtmf', root: 'digits' do
+        rule id: 'digits', scope: 'public' do
+          item repeat: "0-#{options[:limit]}" do
+            one_of do
+              0.upto(9) { |d| item { d.to_s } }
+              item { "#" }
+              item { "*" }
+            end
+          end
+        end
+      end
+      output_options = {
+        render_document: {value: output_formatter.ssml_for_collection(prompts)}
+      }
+      input_options = {
+        mode: :dtmf,
+        initial_timeout: (options[:timeout] || DEFAULT_TIMEOUT) * 1000,
+        inter_digit_timeout: (options[:timeout] || DEFAULT_TIMEOUT) * 1000,
+        grammar: {value: grammar},
+        terminator: options[:terminator]
+      }
+
+      prompt = Punchblock::Component::Prompt.new output_options, input_options, barge_in: options.has_key?(:interruptible) ? options[:interruptible] : true
+      execute_component_and_await_completion prompt
+
+      reason = prompt.complete_event.reason
+
+      Result.new.tap do |result|
+        case reason
+        when proc { |r| r.respond_to? :nlsml }
+          result.status         = :match
+          result.confidence     = reason.confidence
+          result.response       = reason.utterance
+          result.interpretation = reason.interpretation
+          result.nlsml          = reason.nlsml
+        when Punchblock::Event::Complete::Error
+          raise ListenError, reason.details
+        when Punchblock::Event::Complete::Reason
+          result.status = reason.name
+        else
+          raise "Unknown completion reason received: #{reason}"
+        end
+        logger.debug "Ask completed with result #{result.inspect}"
       end
     end
 

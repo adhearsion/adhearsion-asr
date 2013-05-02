@@ -1,5 +1,6 @@
 module AdhearsionASR
-  ListenError = Class.new StandardError
+  Error = Class.new StandardError
+  ListenError = Class.new Error
 end
 
 require "adhearsion-asr/version"

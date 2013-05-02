@@ -43,6 +43,261 @@ module AdhearsionASR
         controller.extend AdhearsionASR::ControllerMethods
       end
 
+      describe "#ask" do
+        let(:prompts) { ['http://example.com/nice-to-meet-you.mp3', 'http://example.com/press-some-buttons.mp3'] }
+
+        let :expected_ssml do
+          RubySpeech::SSML.draw do
+            audio src: 'http://example.com/nice-to-meet-you.mp3'
+            audio src: 'http://example.com/press-some-buttons.mp3'
+          end
+        end
+
+        let :expected_output_options do
+          {render_document: {value: expected_ssml}}
+        end
+
+        let :expected_input_options do
+          {
+            mode: :dtmf,
+            initial_timeout: 5000,
+            inter_digit_timeout: 5000,
+            grammar: { value: expected_grxml }
+          }
+        end
+
+        let(:expected_barge_in) { true }
+
+        let :expected_prompt do
+          Punchblock::Component::Prompt.new expected_output_options, expected_input_options, barge_in: expected_barge_in
+        end
+
+        let(:reason) { Punchblock::Component::Input::Complete::NoMatch.new }
+
+        before { Punchblock::Component::Prompt.any_instance.stub complete_event: mock(reason: reason) }
+
+        context "without a digit limit or terminator digit" do
+          it "raises ArgumentError" do
+            expect { subject.ask prompts }.to raise_error(ArgumentError, "You must specify at least one of limit or terminator")
+          end
+        end
+
+        context "with a digit limit" do
+          let :expected_grxml do
+            RubySpeech::GRXML.draw mode: 'dtmf', root: 'digits' do
+              rule id: 'digits', scope: 'public' do
+                item repeat: '0-5' do
+                  one_of do
+                    0.upto(9) { |d| item { d.to_s } }
+                    item { "#" }
+                    item { "*" }
+                  end
+                end
+              end
+            end
+          end
+
+          it "executes a Prompt component with the correct prompts and grammar" do
+            expect_component_execution expected_prompt
+
+            subject.ask prompts, limit: 5
+          end
+        end
+
+        context "with a terminator" do
+          let :expected_grxml do
+            RubySpeech::GRXML.draw mode: 'dtmf', root: 'digits' do
+              rule id: 'digits', scope: 'public' do
+                item repeat: '0-' do
+                  one_of do
+                    0.upto(9) { |d| item { d.to_s } }
+                    item { "#" }
+                    item { "*" }
+                  end
+                end
+              end
+            end
+          end
+
+          let :expected_input_options do
+            {
+              mode: :dtmf,
+              initial_timeout: 5000,
+              inter_digit_timeout: 5000,
+              grammar: { value: expected_grxml },
+              terminator: '#'
+            }
+          end
+
+          it "executes a Prompt component with the correct prompts and grammar" do
+            expect_component_execution expected_prompt
+
+            subject.ask prompts, terminator: '#'
+          end
+        end
+
+        context "with a digit limit and a terminator" do
+          let :expected_grxml do
+            RubySpeech::GRXML.draw mode: 'dtmf', root: 'digits' do
+              rule id: 'digits', scope: 'public' do
+                item repeat: '0-5' do
+                  one_of do
+                    0.upto(9) { |d| item { d.to_s } }
+                    item { "#" }
+                    item { "*" }
+                  end
+                end
+              end
+            end
+          end
+
+          let :expected_input_options do
+            {
+              mode: :dtmf,
+              initial_timeout: 5000,
+              inter_digit_timeout: 5000,
+              grammar: { value: expected_grxml },
+              terminator: '#'
+            }
+          end
+
+          it "executes a Prompt component with the correct prompts and grammar" do
+            expect_component_execution expected_prompt
+
+            subject.ask prompts, limit: 5, terminator: '#'
+          end
+        end
+
+        context "with :interruptible: false" do
+          let :expected_grxml do
+            RubySpeech::GRXML.draw mode: 'dtmf', root: 'digits' do
+              rule id: 'digits', scope: 'public' do
+                item repeat: '0-5' do
+                  one_of do
+                    0.upto(9) { |d| item { d.to_s } }
+                    item { "#" }
+                    item { "*" }
+                  end
+                end
+              end
+            end
+          end
+
+          let(:expected_barge_in) { false }
+
+          it "executes a Prompt with barge-in disabled" do
+            expect_component_execution expected_prompt
+
+            subject.ask prompts, limit: 5, interruptible: false
+          end
+        end
+
+        context "with a timeout specified" do
+          let :expected_grxml do
+            RubySpeech::GRXML.draw mode: 'dtmf', root: 'digits' do
+              rule id: 'digits', scope: 'public' do
+                item repeat: '0-5' do
+                  one_of do
+                    0.upto(9) { |d| item { d.to_s } }
+                    item { "#" }
+                    item { "*" }
+                  end
+                end
+              end
+            end
+          end
+
+          let :expected_input_options do
+            {
+              mode: :dtmf,
+              initial_timeout: 10000,
+              inter_digit_timeout: 10000,
+              grammar: { value: expected_grxml }
+            }
+          end
+
+          it "executes a Prompt with correct timeout (initial & inter-digit)" do
+            expect_component_execution expected_prompt
+
+            subject.ask prompts, limit: 5, timeout: 10
+          end
+        end
+
+        context "when a response is received" do
+          let :expected_grxml do
+            RubySpeech::GRXML.draw mode: 'dtmf', root: 'digits' do
+              rule id: 'digits', scope: 'public' do
+                item repeat: '0-5' do
+                  one_of do
+                    0.upto(9) { |d| item { d.to_s } }
+                    item { "#" }
+                    item { "*" }
+                  end
+                end
+              end
+            end
+          end
+
+          context "that is a match" do
+            let :nlsml do
+              RubySpeech::NLSML.draw do
+                interpretation confidence: 1 do
+                  input '123', mode: :dtmf
+                  instance 'Foo'
+                end
+              end
+            end
+
+            let(:reason) { Punchblock::Component::Input::Complete::Match.new nlsml: nlsml }
+
+            it "returns :match status and the response" do
+              expect_component_execution expected_prompt
+
+              result = subject.ask prompts, limit: 5
+              result.status.should be :match
+              result.confidence.should == 1
+              result.response.should == '123'
+              result.interpretation.should == 'Foo'
+              result.nlsml.should == nlsml
+            end
+          end
+
+          context "that is a nomatch" do
+            let(:reason) { Punchblock::Component::Input::Complete::NoMatch.new }
+
+            it "returns :nomatch status and a nil response" do
+              expect_component_execution expected_prompt
+
+              result = subject.ask prompts, limit: 5
+              result.status.should be :nomatch
+              result.response.should be_nil
+            end
+          end
+
+          context "that is a noinput" do
+            let(:reason) { Punchblock::Component::Input::Complete::NoInput.new }
+
+            it "returns :noinput status and a nil response" do
+              expect_component_execution expected_prompt
+
+              result = subject.ask prompts, limit: 5
+              result.status.should be :noinput
+              result.response.should be_nil
+            end
+          end
+
+          context "that is an error" do
+            let(:reason) { Punchblock::Event::Complete::Error.new details: 'foobar' }
+
+            it "should raise an error with a message of 'foobar" do
+              expect_component_execution expected_prompt
+
+              expect { subject.ask prompts, limit: 5 }.to raise_error(AdhearsionASR::Error, /foobar/)
+            end
+          end
+        end
+      end
+
       describe "#listen" do
         before { pending }
         let(:grxml) {
