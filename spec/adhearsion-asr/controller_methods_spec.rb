@@ -236,6 +236,27 @@ module AdhearsionASR
           end
         end
 
+        context "with a different default timeout" do
+          let(:expected_grxml) { digit_limit_grammar }
+
+          before do
+            expected_input_options.merge! initial_timeout: 10000,
+              inter_digit_timeout: 10000,
+              max_silence: 10000
+
+              @original_value = Plugin.config.timeout
+              Plugin.config.timeout = 10
+          end
+
+          after { Plugin.config.timeout = @original_value }
+
+          it "executes a Prompt with correct timeout (initial, inter-digit & max-silence)" do
+            expect_component_execution expected_prompt
+
+            subject.ask prompts, limit: 5
+          end
+        end
+
         context "when a response is received" do
           let(:expected_grxml) { digit_limit_grammar }
 

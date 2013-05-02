@@ -64,9 +64,9 @@ module AdhearsionASR
       input_mode = grammar_modes.count > 1 ? :any : grammar_modes.first
       input_options = {
         mode: input_mode,
-        initial_timeout: (options[:timeout] || DEFAULT_TIMEOUT) * 1000,
-        inter_digit_timeout: (options[:timeout] || DEFAULT_TIMEOUT) * 1000,
-        max_silence: (options[:timeout] || DEFAULT_TIMEOUT) * 1000,
+        initial_timeout: (options[:timeout] || Plugin.config.timeout) * 1000,
+        inter_digit_timeout: (options[:timeout] || Plugin.config.timeout) * 1000,
+        max_silence: (options[:timeout] || Plugin.config.timeout) * 1000,
         grammars: grammars,
         terminator: options[:terminator]
       }
