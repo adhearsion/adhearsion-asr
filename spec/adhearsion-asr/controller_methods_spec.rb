@@ -76,9 +76,9 @@ module AdhearsionASR
 
         before { Punchblock::Component::Prompt.any_instance.stub complete_event: mock(reason: reason) }
 
-        context "without a digit limit or terminator digit" do
+        context "without a digit limit, terminator digit or grammar" do
           it "raises ArgumentError" do
-            expect { subject.ask prompts }.to raise_error(ArgumentError, "You must specify at least one of limit or terminator")
+            expect { subject.ask prompts }.to raise_error(ArgumentError, "You must specify at least one of limit, terminator or grammar")
           end
         end
 
@@ -165,6 +165,62 @@ module AdhearsionASR
             expect_component_execution expected_prompt
 
             subject.ask prompts, limit: 5, terminator: '#'
+          end
+        end
+
+        context "with an inline GRXML grammar specified" do
+          let :expected_grxml do
+            RubySpeech::GRXML.draw root: 'main', language: 'en-us', mode: :voice do
+              rule id: 'main', scope: 'public' do
+                one_of do
+                  item { 'yes' }
+                  item { 'no' }
+                end
+              end
+            end
+          end
+
+          let :expected_input_options do
+            {
+              mode: :speech,
+              initial_timeout: 5000,
+              inter_digit_timeout: 5000,
+              grammar: { value: expected_grxml }
+            }
+          end
+
+          it "executes a Prompt component with the correct prompts and grammar" do
+            expect_component_execution expected_prompt
+
+            subject.ask prompts, grammar: expected_grxml
+          end
+
+          context "with multiple grammars specified" do
+            let :other_expected_grxml do
+              RubySpeech::GRXML.draw root: 'main', mode: :dtmf do
+                rule id: 'main', scope: 'public' do
+                  one_of do
+                    item { 1 }
+                    item { 2 }
+                  end
+                end
+              end
+            end
+
+            let :expected_input_options do
+              {
+                mode: :any,
+                initial_timeout: 5000,
+                inter_digit_timeout: 5000,
+                grammars: [{ value: expected_grxml }, { value: other_expected_grxml }]
+              }
+            end
+
+            it "executes a Prompt component with the correct prompts and grammar" do
+              expect_component_execution expected_prompt
+
+              subject.ask prompts, grammar: [expected_grxml, other_expected_grxml]
+            end
           end
         end
 

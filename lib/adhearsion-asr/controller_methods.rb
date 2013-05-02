@@ -39,27 +39,34 @@ module AdhearsionASR
       options = args.last.kind_of?(Hash) ? args.pop : {}
       prompts = args.flatten
 
-      options[:limit] || options[:terminator] || raise(ArgumentError, "You must specify at least one of limit or terminator")
+      options[:grammar] || options[:limit] || options[:terminator] || raise(ArgumentError, "You must specify at least one of limit, terminator or grammar")
 
-      grammar = RubySpeech::GRXML.draw mode: 'dtmf', root: 'digits' do
-        rule id: 'digits', scope: 'public' do
-          item repeat: "0-#{options[:limit]}" do
-            one_of do
-              0.upto(9) { |d| item { d.to_s } }
-              item { "#" }
-              item { "*" }
+      grammars = if options[:grammar]
+        [options[:grammar]].flatten.compact.map { |val| {value: val} }
+      else
+        grammar = RubySpeech::GRXML.draw(mode: :dtmf, root: 'digits') do
+          rule id: 'digits', scope: 'public' do
+            item repeat: "0-#{options[:limit]}" do
+              one_of do
+                0.upto(9) { |d| item { d.to_s } }
+                item { "#" }
+                item { "*" }
+              end
             end
           end
         end
+        [{value: grammar}]
       end
       output_options = {
         render_document: {value: output_formatter.ssml_for_collection(prompts)}
       }
+      grammar_modes = grammars.map { |g| g[:value].mode == :voice ? :speech : g[:value].mode }.uniq
+      input_mode = grammar_modes.count > 1 ? :any : grammar_modes.first
       input_options = {
-        mode: :dtmf,
+        mode: input_mode,
         initial_timeout: (options[:timeout] || DEFAULT_TIMEOUT) * 1000,
         inter_digit_timeout: (options[:timeout] || DEFAULT_TIMEOUT) * 1000,
-        grammar: {value: grammar},
+        grammars: grammars,
         terminator: options[:terminator]
       }
 
