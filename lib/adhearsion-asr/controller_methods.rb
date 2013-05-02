@@ -14,24 +14,24 @@ module AdhearsionASR
     end
 
     #
-    # Prompts for input via DTMF, handling playback of prompts,
-    # timeouts, digit limits and terminator digits.
+    # Prompts for input, handling playback of prompts, DTMF grammar construction, and execution
     #
-    # @example A basic digit collection:
+    # @example A basic DTMF digit collection:
     #   ask "Welcome, ", "/opt/sounds/menu-prompt.mp3",
     #       timeout: 10, terminator: '#', limit: 3
     #
     # The first arguments will be a list of sounds to play, as accepted by #play, including strings for TTS, Date and Time objects, and file paths.
-    # :timeout, :terminator and :limit options may then be specified.
+    # :timeout, :terminator and :limit options may be specified to automatically construct a grammar, or grammars may be manually specified.
     #
     # @param [Object, Array<Object>] args A list of outputs to play, as accepted by #play
-    # @param [Hash] options Options to use for the menu
+    # @param [Hash] options Options to modify the grammar
     # @option options [Boolean] :interruptible If the prompt should be interruptible or not. Defaults to true
     # @option options [Integer] :limit Digit limit (causes collection to cease after a specified number of digits have been collected)
     # @option options [Integer] :timeout Timeout in seconds before the first and between each input digit
     # @option options [String] :terminator Digit to terminate input
+    # @option options [RubySpeech::GRXML::Grammar, Array<RubySpeech::GRXML::Grammar>] :grammar One of a collection of grammars to execute
     #
-    # @return [Result] a result object from which the #response and #status may be established
+    # @return [Result] a result object from which the details of the response may be established
     #
     # @see Output#play
     #
