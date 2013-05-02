@@ -1,8 +1,6 @@
 module AdhearsionASR
   module ControllerMethods
 
-    DEFAULT_TIMEOUT = 5
-
     Result = Struct.new(:status, :confidence, :response, :interpretation, :nlsml) do
       def to_s
         response
