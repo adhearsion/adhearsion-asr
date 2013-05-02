@@ -179,8 +179,7 @@ module AdhearsionASR
           end
 
           before do
-            expected_input_options.merge! mode: :speech,
-              grammar: { value: expected_grxml }
+            expected_input_options.merge! grammar: { value: expected_grxml }
           end
 
           it "executes a Prompt component with the correct prompts and grammar" do
@@ -202,14 +201,54 @@ module AdhearsionASR
             end
 
             before do
-              expected_input_options.merge! mode: :any,
-                grammars: [{ value: expected_grxml }, { value: other_expected_grxml }]
+              expected_input_options.merge! grammars: [{ value: expected_grxml }, { value: other_expected_grxml }]
             end
 
             it "executes a Prompt component with the correct prompts and grammar" do
               expect_component_execution expected_prompt
 
               subject.ask prompts, grammar: [expected_grxml, other_expected_grxml]
+            end
+          end
+        end
+
+        context "with a grammar URL specified" do
+          let(:expected_grxml) { digit_limit_grammar }
+          let(:grammar_url) { 'http://example.com/cities.grxml' }
+
+          before do
+            expected_input_options.merge! grammar: { url: grammar_url }
+          end
+
+          it "executes a Prompt component with the correct prompts and grammar" do
+            expect_component_execution expected_prompt
+
+            subject.ask prompts, grammar_url: grammar_url
+          end
+
+          context "with multiple grammar URLs specified" do
+            let(:other_grammar_url) { 'http://example.com/states.grxml' }
+
+            before do
+              expected_input_options.merge! grammars: [{ url: grammar_url }, { url: other_grammar_url }]
+            end
+
+            it "executes a Prompt component with the correct prompts and grammar" do
+              expect_component_execution expected_prompt
+
+              subject.ask prompts, grammar_url: [grammar_url, other_grammar_url]
+            end
+          end
+
+          context "with grammars specified inline and by URL" do
+            before do
+              expected_input_options.merge! grammars: [{ value: expected_grxml }, { url: grammar_url }]
+            end
+
+            it "executes a Prompt component with the correct prompts and grammar" do
+              expect_component_execution expected_prompt
+
+              subject.ask prompts, grammar: expected_grxml, grammar_url: [grammar_url]
             end
           end
         end

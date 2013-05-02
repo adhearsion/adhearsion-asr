@@ -28,6 +28,7 @@ module AdhearsionASR
     # @option options [Integer] :timeout Timeout in seconds before the first and between each input digit
     # @option options [String] :terminator Digit to terminate input
     # @option options [RubySpeech::GRXML::Grammar, Array<RubySpeech::GRXML::Grammar>] :grammar One of a collection of grammars to execute
+    # @option options [String, Array<String>] :grammar_url One of a collection of URLs for grammars to execute
     # @option options [Hash] :input_options A hash of options passed directly to the Punchblock Input constructor
     # @option options [Hash] :output_options A hash of options passed directly to the Punchblock Output constructor
     #
@@ -41,12 +42,15 @@ module AdhearsionASR
       options = args.last.kind_of?(Hash) ? args.pop : {}
       prompts = args.flatten
 
-      options[:grammar] || options[:limit] || options[:terminator] || raise(ArgumentError, "You must specify at least one of limit, terminator or grammar")
+      options[:grammar] || options[:grammar_url] || options[:limit] || options[:terminator] || raise(ArgumentError, "You must specify at least one of limit, terminator or grammar")
 
-      grammars = if options[:grammar]
-        [options[:grammar]].flatten.compact.map { |val| {value: val} }
-      else
-        grammar = RubySpeech::GRXML.draw(mode: :dtmf, root: 'digits') do
+      grammars = []
+
+      grammars.concat [options[:grammar]].flatten.compact.map { |val| {value: val} } if options[:grammar]
+      grammars.concat [options[:grammar_url]].flatten.compact.map { |val| {url: val} } if options[:grammar_url]
+
+      if grammars.empty?
+        grammar = RubySpeech::GRXML.draw mode: :dtmf, root: 'digits' do
           rule id: 'digits', scope: 'public' do
             item repeat: "0-#{options[:limit]}" do
               one_of do
@@ -57,16 +61,15 @@ module AdhearsionASR
             end
           end
         end
-        [{value: grammar}]
+        grammars << {value: grammar}
       end
+
       output_options = {
         render_document: {value: output_formatter.ssml_for_collection(prompts)},
         renderer: Plugin.config.renderer
       }.merge(options[:output_options] || {})
-      grammar_modes = grammars.map { |g| g[:value].mode == :voice ? :speech : g[:value].mode }.uniq
-      input_mode = grammar_modes.count > 1 ? :any : grammar_modes.first
       input_options = {
-        mode: input_mode,
+        mode: :dtmf,
         initial_timeout: (options[:timeout] || Plugin.config.timeout) * 1000,
         inter_digit_timeout: (options[:timeout] || Plugin.config.timeout) * 1000,
         max_silence: (options[:timeout] || Plugin.config.timeout) * 1000,
