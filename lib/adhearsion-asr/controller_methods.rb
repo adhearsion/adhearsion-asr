@@ -84,7 +84,7 @@ module AdhearsionASR
           result.interpretation = reason.interpretation
           result.nlsml          = reason.nlsml
         when Punchblock::Event::Complete::Error
-          raise ListenError, reason.details
+          raise Error, reason.details
         when Punchblock::Event::Complete::Reason
           result.status = reason.name
         else

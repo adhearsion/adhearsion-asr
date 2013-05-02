@@ -1,5 +1,5 @@
 module AdhearsionASR
-  Error = Class.new StandardError
+  Error = Class.new Adhearsion::Error
   ListenError = Class.new Error
 end
 
