@@ -57,6 +57,20 @@ module AdhearsionASR
           {render_document: {value: expected_ssml}}
         end
 
+        let :digit_limit_grammar do
+          RubySpeech::GRXML.draw mode: 'dtmf', root: 'digits' do
+            rule id: 'digits', scope: 'public' do
+              item repeat: '0-5' do
+                one_of do
+                  0.upto(9) { |d| item { d.to_s } }
+                  item { "#" }
+                  item { "*" }
+                end
+              end
+            end
+          end
+        end
+
         let :expected_input_options do
           {
             mode: :dtmf,
@@ -84,19 +98,7 @@ module AdhearsionASR
         end
 
         context "with a digit limit" do
-          let :expected_grxml do
-            RubySpeech::GRXML.draw mode: 'dtmf', root: 'digits' do
-              rule id: 'digits', scope: 'public' do
-                item repeat: '0-5' do
-                  one_of do
-                    0.upto(9) { |d| item { d.to_s } }
-                    item { "#" }
-                    item { "*" }
-                  end
-                end
-              end
-            end
-          end
+          let(:expected_grxml) { digit_limit_grammar }
 
           it "executes a Prompt component with the correct prompts and grammar" do
             expect_component_execution expected_prompt
@@ -120,15 +122,8 @@ module AdhearsionASR
             end
           end
 
-          let :expected_input_options do
-            {
-              mode: :dtmf,
-              initial_timeout: 5000,
-              inter_digit_timeout: 5000,
-              max_silence: 5000,
-              grammar: { value: expected_grxml },
-              terminator: '#'
-            }
+          before do
+            expected_input_options.merge! terminator: '#'
           end
 
           it "executes a Prompt component with the correct prompts and grammar" do
@@ -153,15 +148,9 @@ module AdhearsionASR
             end
           end
 
-          let :expected_input_options do
-            {
-              mode: :dtmf,
-              initial_timeout: 5000,
-              inter_digit_timeout: 5000,
-              max_silence: 5000,
-              grammar: { value: expected_grxml },
+          before do
+            expected_input_options.merge! grammar: { value: expected_grxml },
               terminator: '#'
-            }
           end
 
           it "executes a Prompt component with the correct prompts and grammar" do
@@ -183,14 +172,9 @@ module AdhearsionASR
             end
           end
 
-          let :expected_input_options do
-            {
-              mode: :speech,
-              initial_timeout: 5000,
-              inter_digit_timeout: 5000,
-              max_silence: 5000,
+          before do
+            expected_input_options.merge! mode: :speech,
               grammar: { value: expected_grxml }
-            }
           end
 
           it "executes a Prompt component with the correct prompts and grammar" do
@@ -211,14 +195,9 @@ module AdhearsionASR
               end
             end
 
-            let :expected_input_options do
-              {
-                mode: :any,
-                initial_timeout: 5000,
-                inter_digit_timeout: 5000,
-                max_silence: 5000,
+            before do
+              expected_input_options.merge! mode: :any,
                 grammars: [{ value: expected_grxml }, { value: other_expected_grxml }]
-              }
             end
 
             it "executes a Prompt component with the correct prompts and grammar" do
@@ -230,19 +209,7 @@ module AdhearsionASR
         end
 
         context "with interruptible: false" do
-          let :expected_grxml do
-            RubySpeech::GRXML.draw mode: 'dtmf', root: 'digits' do
-              rule id: 'digits', scope: 'public' do
-                item repeat: '0-5' do
-                  one_of do
-                    0.upto(9) { |d| item { d.to_s } }
-                    item { "#" }
-                    item { "*" }
-                  end
-                end
-              end
-            end
-          end
+          let(:expected_grxml) { digit_limit_grammar }
 
           let(:expected_barge_in) { false }
 
@@ -254,28 +221,12 @@ module AdhearsionASR
         end
 
         context "with a timeout specified" do
-          let :expected_grxml do
-            RubySpeech::GRXML.draw mode: 'dtmf', root: 'digits' do
-              rule id: 'digits', scope: 'public' do
-                item repeat: '0-5' do
-                  one_of do
-                    0.upto(9) { |d| item { d.to_s } }
-                    item { "#" }
-                    item { "*" }
-                  end
-                end
-              end
-            end
-          end
+          let(:expected_grxml) { digit_limit_grammar }
 
-          let :expected_input_options do
-            {
-              mode: :dtmf,
-              initial_timeout: 10000,
+          before do
+            expected_input_options.merge! initial_timeout: 10000,
               inter_digit_timeout: 10000,
-              max_silence: 10000,
-              grammar: { value: expected_grxml }
-            }
+              max_silence: 10000
           end
 
           it "executes a Prompt with correct timeout (initial, inter-digit & max-silence)" do
@@ -286,19 +237,7 @@ module AdhearsionASR
         end
 
         context "when a response is received" do
-          let :expected_grxml do
-            RubySpeech::GRXML.draw mode: 'dtmf', root: 'digits' do
-              rule id: 'digits', scope: 'public' do
-                item repeat: '0-5' do
-                  one_of do
-                    0.upto(9) { |d| item { d.to_s } }
-                    item { "#" }
-                    item { "*" }
-                  end
-                end
-              end
-            end
-          end
+          let(:expected_grxml) { digit_limit_grammar }
 
           context "that is a match" do
             let :nlsml do
