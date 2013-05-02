@@ -66,6 +66,7 @@ module AdhearsionASR
         mode: input_mode,
         initial_timeout: (options[:timeout] || DEFAULT_TIMEOUT) * 1000,
         inter_digit_timeout: (options[:timeout] || DEFAULT_TIMEOUT) * 1000,
+        max_silence: (options[:timeout] || DEFAULT_TIMEOUT) * 1000,
         grammars: grammars,
         terminator: options[:terminator]
       }

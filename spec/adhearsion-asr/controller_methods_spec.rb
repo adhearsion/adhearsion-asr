@@ -62,6 +62,7 @@ module AdhearsionASR
             mode: :dtmf,
             initial_timeout: 5000,
             inter_digit_timeout: 5000,
+            max_silence: 5000,
             grammar: { value: expected_grxml }
           }
         end
@@ -124,6 +125,7 @@ module AdhearsionASR
               mode: :dtmf,
               initial_timeout: 5000,
               inter_digit_timeout: 5000,
+              max_silence: 5000,
               grammar: { value: expected_grxml },
               terminator: '#'
             }
@@ -156,6 +158,7 @@ module AdhearsionASR
               mode: :dtmf,
               initial_timeout: 5000,
               inter_digit_timeout: 5000,
+              max_silence: 5000,
               grammar: { value: expected_grxml },
               terminator: '#'
             }
@@ -185,6 +188,7 @@ module AdhearsionASR
               mode: :speech,
               initial_timeout: 5000,
               inter_digit_timeout: 5000,
+              max_silence: 5000,
               grammar: { value: expected_grxml }
             }
           end
@@ -212,6 +216,7 @@ module AdhearsionASR
                 mode: :any,
                 initial_timeout: 5000,
                 inter_digit_timeout: 5000,
+                max_silence: 5000,
                 grammars: [{ value: expected_grxml }, { value: other_expected_grxml }]
               }
             end
@@ -268,11 +273,12 @@ module AdhearsionASR
               mode: :dtmf,
               initial_timeout: 10000,
               inter_digit_timeout: 10000,
+              max_silence: 10000,
               grammar: { value: expected_grxml }
             }
           end
 
-          it "executes a Prompt with correct timeout (initial & inter-digit)" do
+          it "executes a Prompt with correct timeout (initial, inter-digit & max-silence)" do
             expect_component_execution expected_prompt
 
             subject.ask prompts, limit: 5, timeout: 10
