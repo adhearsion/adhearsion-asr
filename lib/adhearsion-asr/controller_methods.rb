@@ -28,10 +28,14 @@ module AdhearsionASR
     # @option options [Integer] :timeout Timeout in seconds before the first and between each input digit
     # @option options [String] :terminator Digit to terminate input
     # @option options [RubySpeech::GRXML::Grammar, Array<RubySpeech::GRXML::Grammar>] :grammar One of a collection of grammars to execute
+    # @option options [Hash] :input_options A hash of options passed directly to the Punchblock Input constructor
+    # @option options [Hash] :output_options A hash of options passed directly to the Punchblock Output constructor
     #
     # @return [Result] a result object from which the details of the response may be established
     #
     # @see Output#play
+    # @see Punchblock::Component::Input.new
+    # @see Punchblock::Component::Output.new
     #
     def ask(*args, &block)
       options = args.last.kind_of?(Hash) ? args.pop : {}
@@ -58,7 +62,7 @@ module AdhearsionASR
       output_options = {
         render_document: {value: output_formatter.ssml_for_collection(prompts)},
         renderer: Plugin.config.renderer
-      }
+      }.merge(options[:output_options] || {})
       grammar_modes = grammars.map { |g| g[:value].mode == :voice ? :speech : g[:value].mode }.uniq
       input_mode = grammar_modes.count > 1 ? :any : grammar_modes.first
       input_options = {
@@ -71,7 +75,7 @@ module AdhearsionASR
         recognizer: Plugin.config.recognizer,
         language: Plugin.config.input_language,
         terminator: options[:terminator]
-      }
+      }.merge(options[:input_options] || {})
 
       prompt = Punchblock::Component::Prompt.new output_options, input_options, barge_in: options.has_key?(:interruptible) ? options[:interruptible] : true
       execute_component_and_await_completion prompt

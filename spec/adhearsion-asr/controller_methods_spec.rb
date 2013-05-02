@@ -339,6 +339,34 @@ module AdhearsionASR
           end
         end
 
+        context "with overridden input options" do
+          let(:expected_grxml) { digit_limit_grammar }
+
+          before do
+            expected_input_options.merge! inter_digit_timeout: 35000
+          end
+
+          it "executes a Prompt with correct input options" do
+            expect_component_execution expected_prompt
+
+            subject.ask prompts, limit: 5, input_options: {inter_digit_timeout: 35000}
+          end
+        end
+
+        context "with overridden output options" do
+          let(:expected_grxml) { digit_limit_grammar }
+
+          before do
+            expected_output_options.merge! max_time: 35000
+          end
+
+          it "executes a Prompt with correct output options" do
+            expect_component_execution expected_prompt
+
+            subject.ask prompts, limit: 5, output_options: {max_time: 35000}
+          end
+        end
+
         context "when a response is received" do
           let(:expected_grxml) { digit_limit_grammar }
 
