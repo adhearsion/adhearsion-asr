@@ -39,6 +39,15 @@ module AdhearsionASR
         end
       end
 
+      def self.temp_config_value(key, value)
+        before do
+          @original_value = Plugin.config[key]
+          Plugin.config[key] = value
+        end
+
+        after { Plugin.config[key] = @original_value }
+      end
+
       before do
         controller.extend AdhearsionASR::ControllerMethods
       end
@@ -288,12 +297,9 @@ module AdhearsionASR
             expected_input_options.merge! initial_timeout: 10000,
               inter_digit_timeout: 10000,
               max_silence: 10000
-
-            @original_value = Plugin.config.timeout
-            Plugin.config.timeout = 10
           end
 
-          after { Plugin.config.timeout = @original_value }
+          temp_config_value :timeout, 10
 
           it "executes a Prompt with correct timeout (initial, inter-digit & max-silence)" do
             expect_component_execution expected_prompt
@@ -307,12 +313,9 @@ module AdhearsionASR
 
           before do
             expected_input_options.merge! min_confidence: 0.8
-
-            @original_value = Plugin.config.min_confidence
-            Plugin.config.min_confidence = 0.8
           end
 
-          after { Plugin.config.min_confidence = @original_value }
+          temp_config_value :min_confidence, 0.8
 
           it "executes a Prompt with correct minimum confidence" do
             expect_component_execution expected_prompt
@@ -326,12 +329,9 @@ module AdhearsionASR
 
           before do
             expected_input_options.merge! recognizer: 'something_else'
-
-            @original_value = Plugin.config.recognizer
-            Plugin.config.recognizer = 'something_else'
           end
 
-          after { Plugin.config.recognizer = @original_value }
+          temp_config_value :recognizer, 'something_else'
 
           it "executes a Prompt with correct recognizer" do
             expect_component_execution expected_prompt
@@ -345,12 +345,9 @@ module AdhearsionASR
 
           before do
             expected_input_options.merge! language: 'pt-BR'
-
-            @original_value = Plugin.config.input_language
-            Plugin.config.input_language = 'pt-BR'
           end
 
-          after { Plugin.config.input_language = @original_value }
+          temp_config_value :input_language, 'pt-BR'
 
           it "executes a Prompt with correct input language" do
             expect_component_execution expected_prompt
@@ -364,12 +361,9 @@ module AdhearsionASR
 
           before do
             expected_output_options.merge! renderer: 'something_else'
-
-            @original_value = Plugin.config.renderer
-            Plugin.config.renderer = 'something_else'
           end
 
-          after { Plugin.config.renderer = @original_value }
+          temp_config_value :renderer, 'something_else'
 
           it "executes a Prompt with correct renderer" do
             expect_component_execution expected_prompt
