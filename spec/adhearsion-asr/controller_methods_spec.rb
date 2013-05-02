@@ -54,7 +54,10 @@ module AdhearsionASR
         end
 
         let :expected_output_options do
-          {render_document: {value: expected_ssml}}
+          {
+            render_document: {value: expected_ssml},
+            renderer: nil
+          }
         end
 
         let :digit_limit_grammar do
@@ -77,6 +80,9 @@ module AdhearsionASR
             initial_timeout: 5000,
             inter_digit_timeout: 5000,
             max_silence: 5000,
+            min_confidence: 0.5,
+            recognizer: nil,
+            language: 'en-US',
             grammar: { value: expected_grxml }
           }
         end
@@ -251,6 +257,82 @@ module AdhearsionASR
           after { Plugin.config.timeout = @original_value }
 
           it "executes a Prompt with correct timeout (initial, inter-digit & max-silence)" do
+            expect_component_execution expected_prompt
+
+            subject.ask prompts, limit: 5
+          end
+        end
+
+        context "with a different default minimum confidence" do
+          let(:expected_grxml) { digit_limit_grammar }
+
+          before do
+            expected_input_options.merge! min_confidence: 0.8
+
+              @original_value = Plugin.config.min_confidence
+              Plugin.config.min_confidence = 0.8
+          end
+
+          after { Plugin.config.min_confidence = @original_value }
+
+          it "executes a Prompt with correct minimum confidence" do
+            expect_component_execution expected_prompt
+
+            subject.ask prompts, limit: 5
+          end
+        end
+
+        context "with a different default recognizer" do
+          let(:expected_grxml) { digit_limit_grammar }
+
+          before do
+            expected_input_options.merge! recognizer: 'something_else'
+
+              @original_value = Plugin.config.recognizer
+              Plugin.config.recognizer = 'something_else'
+          end
+
+          after { Plugin.config.recognizer = @original_value }
+
+          it "executes a Prompt with correct recognizer" do
+            expect_component_execution expected_prompt
+
+            subject.ask prompts, limit: 5
+          end
+        end
+
+        context "with a different default input language" do
+          let(:expected_grxml) { digit_limit_grammar }
+
+          before do
+            expected_input_options.merge! language: 'pt-BR'
+
+              @original_value = Plugin.config.input_language
+              Plugin.config.input_language = 'pt-BR'
+          end
+
+          after { Plugin.config.input_language = @original_value }
+
+          it "executes a Prompt with correct input language" do
+            expect_component_execution expected_prompt
+
+            subject.ask prompts, limit: 5
+          end
+        end
+
+        context "with a different default output renderer" do
+          let(:expected_grxml) { digit_limit_grammar }
+
+          before do
+            expected_output_options.merge! renderer: 'something_else'
+
+              @original_value = Plugin.config.renderer
+              Plugin.config.renderer = 'something_else'
+          end
+
+          after { Plugin.config.renderer = @original_value }
+
+          it "executes a Prompt with correct renderer" do
             expect_component_execution expected_prompt
 
             subject.ask prompts, limit: 5

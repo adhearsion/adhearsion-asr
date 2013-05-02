@@ -56,7 +56,8 @@ module AdhearsionASR
         [{value: grammar}]
       end
       output_options = {
-        render_document: {value: output_formatter.ssml_for_collection(prompts)}
+        render_document: {value: output_formatter.ssml_for_collection(prompts)},
+        renderer: Plugin.config.renderer
       }
       grammar_modes = grammars.map { |g| g[:value].mode == :voice ? :speech : g[:value].mode }.uniq
       input_mode = grammar_modes.count > 1 ? :any : grammar_modes.first
@@ -65,7 +66,10 @@ module AdhearsionASR
         initial_timeout: (options[:timeout] || Plugin.config.timeout) * 1000,
         inter_digit_timeout: (options[:timeout] || Plugin.config.timeout) * 1000,
         max_silence: (options[:timeout] || Plugin.config.timeout) * 1000,
+        min_confidence: Plugin.config.min_confidence,
         grammars: grammars,
+        recognizer: Plugin.config.recognizer,
+        language: Plugin.config.input_language,
         terminator: options[:terminator]
       }
 
