@@ -229,7 +229,7 @@ module AdhearsionASR
           end
         end
 
-        context "with :interruptible: false" do
+        context "with interruptible: false" do
           let :expected_grxml do
             RubySpeech::GRXML.draw mode: 'dtmf', root: 'digits' do
               rule id: 'digits', scope: 'public' do
