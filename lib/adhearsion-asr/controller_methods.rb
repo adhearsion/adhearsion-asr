@@ -1,15 +1,9 @@
+require 'adhearsion-asr/ask_grammar_builder'
+require 'adhearsion-asr/prompt_builder'
+require 'adhearsion-asr/menu_builder'
+
 module AdhearsionASR
   module ControllerMethods
-
-    Result = Struct.new(:status, :confidence, :response, :interpretation, :nlsml) do
-      def to_s
-        response
-      end
-
-      def inspect
-        "#<#{self.class} status=#{status.inspect}, confidence=#{confidence.inspect}, response=#{response.inspect}, interpretation=#{interpretation.inspect}, nlsml=#{nlsml.inspect}>"
-      end
-    end
 
     #
     # Prompts for input, handling playback of prompts, DTMF grammar construction, and execution
@@ -38,69 +32,83 @@ module AdhearsionASR
     # @see Punchblock::Component::Input.new
     # @see Punchblock::Component::Output.new
     #
-    def ask(*args, &block)
+    def ask(*args)
       options = args.last.kind_of?(Hash) ? args.pop : {}
       prompts = args.flatten
 
       options[:grammar] || options[:grammar_url] || options[:limit] || options[:terminator] || raise(ArgumentError, "You must specify at least one of limit, terminator or grammar")
 
-      grammars = []
+      output_document = output_formatter.ssml_for_collection(prompts)
+      grammars = AskGrammarBuilder.new(options).grammars
 
-      grammars.concat [options[:grammar]].flatten.compact.map { |val| {value: val} } if options[:grammar]
-      grammars.concat [options[:grammar_url]].flatten.compact.map { |val| {url: val} } if options[:grammar_url]
+      PromptBuilder.new(output_document, grammars, options).execute self
+    end
 
-      if grammars.empty?
-        grammar = RubySpeech::GRXML.draw mode: :dtmf, root: 'digits' do
-          rule id: 'digits', scope: 'public' do
-            item repeat: "0-#{options[:limit]}" do
-              one_of do
-                0.upto(9) { |d| item { d.to_s } }
-                item { "#" }
-                item { "*" }
-              end
-            end
-          end
-        end
-        grammars << {value: grammar}
-      end
+    # Creates and manages a multiple choice menu driven by DTMF, handling playback of prompts,
+    # invalid input, retries and timeouts, and final failures.
+    #
+    # @example A complete example of the method is as follows:
+    #   menu "Welcome, ", "/opt/sounds/menu-prompt.mp3", tries: 2, timeout: 10 do
+    #     match 1, OperatorController
+    #
+    #     match 10..19 do
+    #       pass DirectController
+    #     end
+    #
+    #     match 5, 6, 9 do |exten|
+    #       play "The #{exten} extension is currently not active"
+    #     end
+    #
+    #     match '7', OfficeController
+    #
+    #     invalid { play "Please choose a valid extension" }
+    #     timeout { play "Input timed out, try again." }
+    #     failure { pass OperatorController }
+    #   end
+    #
+    # The first arguments will be a list of sounds to play, as accepted by #play, including strings for TTS, Date and Time objects, and file paths.
+    # :tries and :timeout options respectively specify the number of tries before going into failure, and the timeout in seconds allowed on each digit input.
+    # The most important part is the following block, which specifies how the menu will be constructed and handled.
+    #
+    # #match handles connecting an input pattern to a payload.
+    # The pattern can be one or more of: an integer, a Range, a string, an Array of the possible single types.
+    # Input is matched against patterns, and the first exact match has it's payload executed.
+    # Matched input is passed in to the associated block, or to the controller through #options.
+    #
+    # Allowed payloads are the name of a controller class, in which case it is executed through its #run method, or a block, which is executed in the context of the current controller.
+    #
+    # #invalid has its associated block executed when the input does not possibly match any pattern.
+    # #timeout's block is run when timeout expires before receiving any input
+    # #failure runs its block when the maximum number of tries is reached without an input match.
+    #
+    # Execution of the current context resumes after #menu finishes. If you wish to jump to an entirely different controller, use #pass.
+    # Menu will return :failed if failure was reached, or :done if a match was executed.
+    #
+    # @param [Object] args A list of outputs to play, as accepted by #play
+    # @param [Hash] options Options to use for the menu
+    # @option options [Integer] :tries Number of tries allowed before failure
+    # @option options [Integer] :timeout Timeout in seconds before the first and between each input digit
+    # @option options [Boolean] :interruptible If the prompt should be interruptible or not. Defaults to true
+    # @option options [Hash] :input_options A hash of options passed directly to the Punchblock Input constructor
+    # @option options [Hash] :output_options A hash of options passed directly to the Punchblock Output constructor
+    #
+    # @return [Result] a result object from which the details of the response may be established
+    #
+    # @see Output#play
+    # @see CallController#pass
+    #
+    def menu(*args, &block)
+      raise ArgumentError, "You must specify a block to build the menu" unless block
+      options = args.last.kind_of?(Hash) ? args.pop : {}
+      prompts = args.flatten
 
-      output_options = {
-        render_document: {value: output_formatter.ssml_for_collection(prompts)},
-        renderer: Plugin.config.renderer
-      }.merge(options[:output_options] || {})
-      input_options = {
-        mode: :dtmf,
-        initial_timeout: (options[:timeout] || Plugin.config.timeout) * 1000,
-        inter_digit_timeout: (options[:timeout] || Plugin.config.timeout) * 1000,
-        max_silence: (options[:timeout] || Plugin.config.timeout) * 1000,
-        min_confidence: Plugin.config.min_confidence,
-        grammars: grammars,
-        recognizer: Plugin.config.recognizer,
-        language: Plugin.config.input_language,
-        terminator: options[:terminator]
-      }.merge(options[:input_options] || {})
+      menu_builder = MenuBuilder.new(options, &block)
 
-      prompt = Punchblock::Component::Prompt.new output_options, input_options, barge_in: options.has_key?(:interruptible) ? options[:interruptible] : true
-      execute_component_and_await_completion prompt
+      grammars = [{value: menu_builder.grammar}]
+      output_document = output_formatter.ssml_for_collection(prompts)
 
-      reason = prompt.complete_event.reason
-
-      Result.new.tap do |result|
-        case reason
-        when proc { |r| r.respond_to? :nlsml }
-          result.status         = :match
-          result.confidence     = reason.confidence
-          result.response       = reason.utterance
-          result.interpretation = reason.interpretation
-          result.nlsml          = reason.nlsml
-        when Punchblock::Event::Complete::Error
-          raise Error, reason.details
-        when Punchblock::Event::Complete::Reason
-          result.status = reason.name
-        else
-          raise "Unknown completion reason received: #{reason}"
-        end
-        logger.debug "Ask completed with result #{result.inspect}"
+      PromptBuilder.new(output_document, grammars, options).execute(self).tap do |result|
+        menu_builder.process_result result
       end
     end
   end

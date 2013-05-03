@@ -52,23 +52,46 @@ module AdhearsionASR
         controller.extend AdhearsionASR::ControllerMethods
       end
 
+      let(:prompts) { ['http://example.com/nice-to-meet-you.mp3', 'http://example.com/press-some-buttons.mp3'] }
+
+      let :expected_ssml do
+        RubySpeech::SSML.draw do
+          audio src: 'http://example.com/nice-to-meet-you.mp3'
+          audio src: 'http://example.com/press-some-buttons.mp3'
+        end
+      end
+
+      let :expected_output_options do
+        {
+          render_document: {value: expected_ssml},
+          renderer: nil
+        }
+      end
+
+      let :expected_input_options do
+        {
+          mode: :dtmf,
+          initial_timeout: 5000,
+          inter_digit_timeout: 5000,
+          max_silence: 5000,
+          min_confidence: 0.5,
+          recognizer: nil,
+          language: 'en-US',
+          grammar: { value: expected_grxml }
+        }
+      end
+
+      let(:expected_barge_in) { true }
+
+      let :expected_prompt do
+        Punchblock::Component::Prompt.new expected_output_options, expected_input_options, barge_in: expected_barge_in
+      end
+
+      let(:reason) { Punchblock::Component::Input::Complete::NoMatch.new }
+
+      before { Punchblock::Component::Prompt.any_instance.stub complete_event: mock(reason: reason) }
+
       describe "#ask" do
-        let(:prompts) { ['http://example.com/nice-to-meet-you.mp3', 'http://example.com/press-some-buttons.mp3'] }
-
-        let :expected_ssml do
-          RubySpeech::SSML.draw do
-            audio src: 'http://example.com/nice-to-meet-you.mp3'
-            audio src: 'http://example.com/press-some-buttons.mp3'
-          end
-        end
-
-        let :expected_output_options do
-          {
-            render_document: {value: expected_ssml},
-            renderer: nil
-          }
-        end
-
         let :digit_limit_grammar do
           RubySpeech::GRXML.draw mode: 'dtmf', root: 'digits' do
             rule id: 'digits', scope: 'public' do
@@ -82,29 +105,6 @@ module AdhearsionASR
             end
           end
         end
-
-        let :expected_input_options do
-          {
-            mode: :dtmf,
-            initial_timeout: 5000,
-            inter_digit_timeout: 5000,
-            max_silence: 5000,
-            min_confidence: 0.5,
-            recognizer: nil,
-            language: 'en-US',
-            grammar: { value: expected_grxml }
-          }
-        end
-
-        let(:expected_barge_in) { true }
-
-        let :expected_prompt do
-          Punchblock::Component::Prompt.new expected_output_options, expected_input_options, barge_in: expected_barge_in
-        end
-
-        let(:reason) { Punchblock::Component::Input::Complete::NoMatch.new }
-
-        before { Punchblock::Component::Prompt.any_instance.stub complete_event: mock(reason: reason) }
 
         context "without a digit limit, terminator digit or grammar" do
           it "raises ArgumentError" do
@@ -458,6 +458,204 @@ module AdhearsionASR
               expect_component_execution expected_prompt
 
               expect { subject.ask prompts, limit: 5 }.to raise_error(AdhearsionASR::Error, /foobar/)
+            end
+          end
+        end
+      end
+
+      describe "#menu" do
+        context "with no block" do
+          it "should raise ArgumentError" do
+            expect { subject.menu }.to raise_error(ArgumentError, /specify a block to build the menu/)
+          end
+        end
+
+        context "with no matches" do
+          it "should raise ArgumentError" do
+            expect do
+              subject.menu do
+              end
+            end.to raise_error(ArgumentError, /specify one or more matches/)
+          end
+        end
+
+        context "tries"
+
+        context "with several matches specified" do
+          let :expected_grxml do
+            RubySpeech::GRXML.draw mode: 'dtmf', root: 'options' do
+              rule id: 'options', scope: 'public' do
+                item do
+                  one_of do
+                    item { '1' }
+                  end
+                end
+              end
+            end
+          end
+
+          context "with interruptible: false" do
+            let(:expected_barge_in) { false }
+
+            it "executes a Prompt with barge-in disabled" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts, interruptible: false do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with a timeout specified" do
+            before do
+              expected_input_options.merge! initial_timeout: 10000,
+                inter_digit_timeout: 10000,
+                max_silence: 10000
+            end
+
+            it "executes a Prompt with correct timeout (initial, inter-digit & max-silence)" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts, timeout: 10 do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with a different default timeout" do
+            before do
+              expected_input_options.merge! initial_timeout: 10000,
+                inter_digit_timeout: 10000,
+                max_silence: 10000
+            end
+
+            temp_config_value :timeout, 10
+
+            it "executes a Prompt with correct timeout (initial, inter-digit & max-silence)" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with a different default minimum confidence" do
+            before do
+              expected_input_options.merge! min_confidence: 0.8
+            end
+
+            temp_config_value :min_confidence, 0.8
+
+            it "executes a Prompt with correct minimum confidence" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with a different default recognizer" do
+            before do
+              expected_input_options.merge! recognizer: 'something_else'
+            end
+
+            temp_config_value :recognizer, 'something_else'
+
+            it "executes a Prompt with correct recognizer" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with a different default input language" do
+            before do
+              expected_input_options.merge! language: 'pt-BR'
+            end
+
+            temp_config_value :input_language, 'pt-BR'
+
+            it "executes a Prompt with correct input language" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with a different default output renderer" do
+            before do
+              expected_output_options.merge! renderer: 'something_else'
+            end
+
+            temp_config_value :renderer, 'something_else'
+
+            it "executes a Prompt with correct renderer" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with overridden input options" do
+            before do
+              expected_input_options.merge! inter_digit_timeout: 35000
+            end
+
+            it "executes a Prompt with correct input options" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts, input_options: {inter_digit_timeout: 35000} do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with overridden output options" do
+            before do
+              expected_output_options.merge! max_time: 35000
+            end
+
+            it "executes a Prompt with correct output options" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts, output_options: {max_time: 35000} do
+                match(1) {}
+              end
+            end
+          end
+
+          context "when input completes with an error" do
+            let(:reason) { Punchblock::Event::Complete::Error.new details: 'foobar' }
+
+            it "should raise an error with a message of 'foobar'" do
+              expect_component_execution expected_prompt
+
+              expect do
+                subject.menu prompts do
+                  match(1) {}
+                end
+              end.to raise_error(AdhearsionASR::Error, /foobar/)
+            end
+          end
+
+          context "when input doesn't match any of the specified matches" do
+            it "runs the invalid handler" do
+              expect_component_execution expected_prompt
+              should_receive :do_something_on_invalid
+
+              subject.menu prompts do
+                match(1) {}
+
+                invalid { do_something_on_invalid }
+              end
             end
           end
         end
