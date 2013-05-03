@@ -857,6 +857,50 @@ module AdhearsionASR
               end
             end
           end
+
+          context "when the input abmiguously matches multiple specified matches" do
+            let :expected_grxml do
+              RubySpeech::GRXML.draw mode: 'dtmf', root: 'options', tag_format: 'semantics/1.0-literals' do
+                rule id: 'options', scope: 'public' do
+                  item do
+                    one_of do
+                      item do
+                        tag { '0' }
+                        '1'
+                      end
+                      item do
+                        tag { '1' }
+                        '1'
+                      end
+                    end
+                  end
+                end
+              end
+            end
+
+            let :nlsml do
+              RubySpeech::NLSML.draw do
+                interpretation confidence: 1 do
+                  input '1', mode: :dtmf
+                  instance '0'
+                  instance '1'
+                end
+              end
+            end
+
+            let(:reason) { Punchblock::Component::Input::Complete::Match.new nlsml: nlsml }
+
+            it "executes the first successful match" do
+              expect_component_execution expected_prompt
+              should_receive(:do_something_on_match).once.with('1')
+              should_receive(:do_otherthing_on_match).never
+
+              subject.menu prompts do
+                match(1) { |v| do_something_on_match v }
+                match(1) { |v| do_otherthing_on_match v }
+              end
+            end
+          end
         end
       end
     end
