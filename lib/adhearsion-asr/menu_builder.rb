@@ -66,7 +66,15 @@ module AdhearsionASR
               matchers.each_with_index do |matcher, index|
                 item do
                   tag { index.to_s }
-                  matcher.keys.first.to_s
+                  if matcher.keys.count > 1
+                    one_of do
+                      matcher.keys.each do |key|
+                        item { key.to_s }
+                      end
+                    end
+                  else
+                    matcher.keys.first.to_s
+                  end
                 end
               end
             end
