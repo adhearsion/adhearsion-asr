@@ -778,6 +778,84 @@ module AdhearsionASR
                 end
               end
             end
+
+            context "when the match was a range" do
+              let :expected_grxml do
+                RubySpeech::GRXML.draw mode: 'dtmf', root: 'options', tag_format: 'semantics/1.0-literals' do
+                  rule id: 'options', scope: 'public' do
+                    item do
+                      one_of do
+                        item do
+                          tag { '0' }
+                          '0'
+                        end
+                        item do
+                          tag { '1' }
+                          '1'
+                        end
+                        item do
+                          tag { '2' }
+                          one_of do
+                            item { '2' }
+                            item { '3' }
+                          end
+                        end
+                      end
+                    end
+                  end
+                end
+              end
+
+              it "invokes the match payload" do
+                expect_component_execution expected_prompt
+                should_receive(:do_something_on_match).once.with('3')
+
+                subject.menu prompts do
+                  match(0) {}
+                  match(1) {}
+                  match(2..3) { |v| do_something_on_match v }
+                end
+              end
+            end
+
+            context "when the match was an array of options" do
+              let :expected_grxml do
+                RubySpeech::GRXML.draw mode: 'dtmf', root: 'options', tag_format: 'semantics/1.0-literals' do
+                  rule id: 'options', scope: 'public' do
+                    item do
+                      one_of do
+                        item do
+                          tag { '0' }
+                          '0'
+                        end
+                        item do
+                          tag { '1' }
+                          '1'
+                        end
+                        item do
+                          tag { '2' }
+                          one_of do
+                            item { '2' }
+                            item { '3' }
+                          end
+                        end
+                      end
+                    end
+                  end
+                end
+              end
+
+              it "invokes the match payload" do
+                expect_component_execution expected_prompt
+                should_receive(:do_something_on_match).once.with('3')
+
+                subject.menu prompts do
+                  match(0) {}
+                  match(1) {}
+                  match([2,3]) { |v| do_something_on_match v }
+                end
+              end
+            end
           end
         end
       end

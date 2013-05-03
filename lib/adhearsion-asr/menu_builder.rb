@@ -66,15 +66,7 @@ module AdhearsionASR
               matchers.each_with_index do |matcher, index|
                 item do
                   tag { index.to_s }
-                  if matcher.keys.count > 1
-                    one_of do
-                      matcher.keys.each do |key|
-                        item { key.to_s }
-                      end
-                    end
-                  else
-                    matcher.keys.first.to_s
-                  end
+                  matcher.apply_to_grammar self
                 end
               end
             end
@@ -90,6 +82,23 @@ module AdhearsionASR
         else
           controller.invoke payload, extension: response
         end
+      end
+
+      def apply_to_grammar(grammar)
+        possible_options = calculate_possible_options
+        if possible_options.count > 1
+          grammar.one_of do
+            possible_options.each do |key|
+              item { key.to_s }
+            end
+          end
+        else
+          keys.first.to_s
+        end
+      end
+
+      def calculate_possible_options
+        keys.map { |key| key.respond_to?(:to_a) ? key.to_a : key }.flatten
       end
     end
   end
