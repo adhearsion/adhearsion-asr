@@ -15,6 +15,10 @@ module AdhearsionASR
       @callbacks[:nomatch] = block
     end
 
+    def timeout(&block)
+      @callbacks[:noinput] = block
+    end
+
     def grammar
       @grammar ||= build_grammar
     end

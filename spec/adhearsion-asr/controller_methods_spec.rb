@@ -658,6 +658,21 @@ module AdhearsionASR
               end
             end
           end
+
+          context "when we don't get any input" do
+            let(:reason) { Punchblock::Component::Input::Complete::NoInput.new }
+
+            it "runs the timeout handler" do
+              expect_component_execution expected_prompt
+              should_receive :do_something_on_timeout
+
+              subject.menu prompts do
+                match(1) {}
+
+                timeout { do_something_on_timeout }
+              end
+            end
+          end
         end
       end
     end
