@@ -487,7 +487,10 @@ module AdhearsionASR
               rule id: 'options', scope: 'public' do
                 item do
                   one_of do
-                    item { '1' }
+                    item do
+                      tag { '0' }
+                      '1'
+                    end
                   end
                 end
               end
@@ -670,6 +673,70 @@ module AdhearsionASR
                 match(1) {}
 
                 timeout { do_something_on_timeout }
+              end
+            end
+          end
+
+          context "when the input unambiguously matches a specified match" do
+            let :expected_grxml do
+              RubySpeech::GRXML.draw mode: 'dtmf', root: 'options', tag_format: 'semantics/1.0-literals' do
+                rule id: 'options', scope: 'public' do
+                  item do
+                    one_of do
+                      item do
+                        tag { '0' }
+                        '2'
+                      end
+                      item do
+                        tag { '1' }
+                        '1'
+                      end
+                      item do
+                        tag { '2' }
+                        '3'
+                      end
+                    end
+                  end
+                end
+              end
+            end
+
+            let :nlsml do
+              RubySpeech::NLSML.draw do
+                interpretation confidence: 1 do
+                  input '3', mode: :dtmf
+                  instance '2'
+                end
+              end
+            end
+
+            let(:reason) { Punchblock::Component::Input::Complete::Match.new nlsml: nlsml }
+
+            context "which specifies a controller class" do
+              it "invokes the specfied controller, with the matched input as the :extension key in its metadata" do
+                some_controller_class = Class.new Adhearsion::CallController
+
+                expect_component_execution expected_prompt
+                should_receive(:invoke).once.with(some_controller_class, extension: '3')
+
+                subject.menu prompts do
+                  match(2) {}
+                  match(1) {}
+                  match 3, some_controller_class
+                end
+              end
+            end
+
+            context "which specifies a block to be run" do
+              it "invokes the block, passing in the input that matched" do
+                expect_component_execution expected_prompt
+                should_receive(:do_something_on_match).once.with('3')
+
+                subject.menu prompts do
+                  match(2) {}
+                  match(1) {}
+                  match(3) { |v| do_something_on_match v }
+                end
               end
             end
           end

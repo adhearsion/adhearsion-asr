@@ -2,21 +2,23 @@ module AdhearsionASR
   class MenuBuilder
     def initialize(options, &block)
       @options = options
-      @matches = []
+      @matchers = []
       @callbacks = {}
       build(&block)
     end
 
-    def match(match, &block)
-      @matches << match
+    def match(*args, &block)
+      payload = block || args.pop
+
+      @matchers << Matcher.new(payload, args)
     end
 
     def invalid(&block)
-      @callbacks[:nomatch] = block
+      register_user_supplied_callback :nomatch, &block
     end
 
     def timeout(&block)
-      @callbacks[:noinput] = block
+      register_user_supplied_callback :noinput, &block
     end
 
     def grammar
@@ -24,15 +26,28 @@ module AdhearsionASR
     end
 
     def process_result(result)
-      execute_hook_for result.status, result.response
+      if result.status == :match
+        handle_match result
+      else
+        execute_hook_for result
+      end
     end
 
     private
 
-    def execute_hook_for(status, utterance)
-      callback = @callbacks[status]
+    def register_user_supplied_callback(name, &block)
+      @callbacks[name] = block
+    end
+
+    def execute_hook_for(result)
+      callback = @callbacks[result.status]
       return unless callback
-      @context.instance_exec utterance, &callback
+      @context.instance_exec result.response, &callback
+    end
+
+    def handle_match(result)
+      match = @matchers[result.interpretation.to_i]
+      match.dispatch @context, result.response
     end
 
     def build(&block)
@@ -41,16 +56,31 @@ module AdhearsionASR
     end
 
     def build_grammar
-      raise ArgumentError, "You must specify one or more matches." if @matches.count < 1
-      matches = @matches
+      raise ArgumentError, "You must specify one or more matches." if @matchers.count < 1
+      matchers = @matchers
 
-      RubySpeech::GRXML.draw mode: :dtmf, root: 'options' do
+      RubySpeech::GRXML.draw mode: :dtmf, root: 'options', tag_format: 'semantics/1.0-literals' do
         rule id: 'options', scope: 'public' do
           item do
             one_of do
-              matches.each { |d| item { d.to_s } }
+              matchers.each_with_index do |matcher, index|
+                item do
+                  tag { index.to_s }
+                  matcher.keys.first.to_s
+                end
+              end
             end
           end
+        end
+      end
+    end
+
+    Matcher = Struct.new(:payload, :keys) do
+      def dispatch(controller, response)
+        if payload.is_a?(Proc)
+          controller.instance_exec response, &payload
+        else
+          controller.invoke payload, extension: response
         end
       end
     end
