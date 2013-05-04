@@ -104,12 +104,9 @@ module AdhearsionASR
 
       menu_builder = MenuBuilder.new(options, &block)
 
-      grammars = [{value: menu_builder.grammar}]
       output_document = output_formatter.ssml_for_collection(prompts)
 
-      PromptBuilder.new(output_document, grammars, options).execute(self).tap do |result|
-        menu_builder.process_result result
-      end
+      menu_builder.execute output_document, self
     end
   end
 end

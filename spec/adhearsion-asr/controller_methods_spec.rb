@@ -18,7 +18,7 @@ module AdhearsionASR
       end
 
       def expect_message_waiting_for_response(message, fail = false)
-        expectation = controller.should_receive(:write_and_await_response).once.with message
+        expectation = controller.should_receive(:write_and_await_response).with message
         if fail
           expectation.and_raise fail
         else
@@ -27,16 +27,17 @@ module AdhearsionASR
       end
 
       def expect_message_of_type_waiting_for_response(message)
-        controller.should_receive(:write_and_await_response).once.with(message.class).and_return message
+        controller.should_receive(:write_and_await_response).with(message.class).and_return message
       end
 
       def expect_component_execution(component, fail = false)
-        expectation = controller.should_receive(:execute_component_and_await_completion).once.ordered.with(component)
+        expectation = controller.should_receive(:execute_component_and_await_completion).ordered.with(component)
         if fail
           expectation.and_raise fail
         else
           expectation.and_return component
         end
+        expectation
       end
 
       def self.temp_config_value(key, value)
@@ -479,8 +480,6 @@ module AdhearsionASR
           end
         end
 
-        context "tries"
-
         context "with several matches specified" do
           let :expected_grxml do
             RubySpeech::GRXML.draw mode: 'dtmf', root: 'options' do
@@ -650,14 +649,55 @@ module AdhearsionASR
           end
 
           context "when input doesn't match any of the specified matches" do
-            it "runs the invalid handler" do
+            it "runs the invalid and failure handlers" do
               expect_component_execution expected_prompt
-              should_receive :do_something_on_invalid
+              should_receive(:do_something_on_invalid).once.ordered
+              should_receive(:do_something_on_failure).once.ordered
 
               subject.menu prompts do
                 match(1) {}
 
                 invalid { do_something_on_invalid }
+                failure { do_something_on_failure }
+              end
+            end
+
+            context "when allowed multiple tries" do
+              let :nlsml do
+                RubySpeech::NLSML.draw do
+                  interpretation confidence: 1 do
+                    input '1', mode: :dtmf
+                    instance '0'
+                  end
+                end
+              end
+
+              let(:reason2) { Punchblock::Component::Input::Complete::Match.new nlsml: nlsml }
+
+              it "executes the prompt repeatedly until it gets a match" do
+                some_controller_class = Class.new Adhearsion::CallController
+
+                expect_component_execution(expected_prompt).twice
+                should_receive(:do_something_on_invalid).once.ordered
+                should_receive(:invoke).once.with(some_controller_class, extension: '1').ordered
+                should_receive(:do_something_on_failure).never
+
+                invocation_count = 0
+                Punchblock::Component::Prompt.any_instance.stub(:complete_event) do
+                  invocation_count += 1
+                  case invocation_count
+                  when 1 then mock(reason: reason)
+                  when 2 then mock(reason: reason2)
+                  else raise('Too many attempts')
+                  end
+                end
+
+                subject.menu prompts, tries: 3 do
+                  match 1, some_controller_class
+
+                  invalid { do_something_on_invalid }
+                  failure { do_something_on_failure }
+                end
               end
             end
           end
@@ -665,14 +705,55 @@ module AdhearsionASR
           context "when we don't get any input" do
             let(:reason) { Punchblock::Component::Input::Complete::NoInput.new }
 
-            it "runs the timeout handler" do
+            it "runs the timeout and failure handlers" do
               expect_component_execution expected_prompt
-              should_receive :do_something_on_timeout
+              should_receive(:do_something_on_timeout).once.ordered
+              should_receive(:do_something_on_failure).once.ordered
 
               subject.menu prompts do
                 match(1) {}
 
                 timeout { do_something_on_timeout }
+                failure { do_something_on_failure }
+              end
+            end
+
+            context "when allowed multiple tries" do
+              let :nlsml do
+                RubySpeech::NLSML.draw do
+                  interpretation confidence: 1 do
+                    input '1', mode: :dtmf
+                    instance '0'
+                  end
+                end
+              end
+
+              let(:reason2) { Punchblock::Component::Input::Complete::Match.new nlsml: nlsml }
+
+              it "executes the prompt repeatedly until it gets a match" do
+                some_controller_class = Class.new Adhearsion::CallController
+
+                expect_component_execution(expected_prompt).twice
+                should_receive(:do_something_on_timeout).once.ordered
+                should_receive(:invoke).once.with(some_controller_class, extension: '1').ordered
+                should_receive(:do_something_on_failure).never
+
+                invocation_count = 0
+                Punchblock::Component::Prompt.any_instance.stub(:complete_event) do
+                  invocation_count += 1
+                  case invocation_count
+                  when 1 then mock(reason: reason)
+                  when 2 then mock(reason: reason2)
+                  else raise('Too many attempts')
+                  end
+                end
+
+                subject.menu prompts, tries: 3 do
+                  match 1, some_controller_class
+
+                  timeout { do_something_on_timeout }
+                  failure { do_something_on_failure }
+                end
               end
             end
           end

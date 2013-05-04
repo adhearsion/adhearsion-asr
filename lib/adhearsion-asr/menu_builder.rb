@@ -1,3 +1,5 @@
+require 'adhearsion-asr/prompt_builder'
+
 module AdhearsionASR
   class MenuBuilder
     def initialize(options, &block)
@@ -21,33 +23,48 @@ module AdhearsionASR
       register_user_supplied_callback :noinput, &block
     end
 
-    def grammar
-      @grammar ||= build_grammar
+    def failure(&block)
+      register_user_supplied_callback :failure, &block
+    end
+
+    def execute(output_document, controller)
+      catch :match do
+        (@options[:tries] || 1).times do
+          result = PromptBuilder.new(output_document, grammars, @options).execute(controller)
+          process_result result
+        end
+        execute_hook :failure
+      end
+    end
+
+    private
+
+    def grammars
+      @grammar ||= [{value: build_grammar}]
     end
 
     def process_result(result)
       if result.status == :match
         handle_match result
       else
-        execute_hook_for result
+        execute_hook result.status
       end
     end
-
-    private
 
     def register_user_supplied_callback(name, &block)
       @callbacks[name] = block
     end
 
-    def execute_hook_for(result)
-      callback = @callbacks[result.status]
+    def execute_hook(hook_name)
+      callback = @callbacks[hook_name]
       return unless callback
-      @context.instance_exec result.response, &callback
+      @context.instance_exec(&callback)
     end
 
     def handle_match(result)
       match = @matchers[result.interpretation.to_i]
       match.dispatch @context, result.response
+      throw :match
     end
 
     def build(&block)
