@@ -18,7 +18,7 @@ module AdhearsionASR
       end
 
       def expect_message_waiting_for_response(message, fail = false)
-        expectation = controller.should_receive(:write_and_await_response).once.with message
+        expectation = controller.should_receive(:write_and_await_response).with message
         if fail
           expectation.and_raise fail
         else
@@ -27,16 +27,17 @@ module AdhearsionASR
       end
 
       def expect_message_of_type_waiting_for_response(message)
-        controller.should_receive(:write_and_await_response).once.with(message.class).and_return message
+        controller.should_receive(:write_and_await_response).with(message.class).and_return message
       end
 
       def expect_component_execution(component, fail = false)
-        expectation = controller.should_receive(:execute_component_and_await_completion).once.ordered.with(component)
+        expectation = controller.should_receive(:execute_component_and_await_completion).ordered.with(component)
         if fail
           expectation.and_raise fail
         else
           expectation.and_return component
         end
+        expectation
       end
 
       def self.temp_config_value(key, value)
@@ -52,23 +53,46 @@ module AdhearsionASR
         controller.extend AdhearsionASR::ControllerMethods
       end
 
+      let(:prompts) { ['http://example.com/nice-to-meet-you.mp3', 'http://example.com/press-some-buttons.mp3'] }
+
+      let :expected_ssml do
+        RubySpeech::SSML.draw do
+          audio src: 'http://example.com/nice-to-meet-you.mp3'
+          audio src: 'http://example.com/press-some-buttons.mp3'
+        end
+      end
+
+      let :expected_output_options do
+        {
+          render_document: {value: expected_ssml},
+          renderer: nil
+        }
+      end
+
+      let :expected_input_options do
+        {
+          mode: :dtmf,
+          initial_timeout: 5000,
+          inter_digit_timeout: 5000,
+          max_silence: 5000,
+          min_confidence: 0.5,
+          recognizer: nil,
+          language: 'en-US',
+          grammar: { value: expected_grxml }
+        }
+      end
+
+      let(:expected_barge_in) { true }
+
+      let :expected_prompt do
+        Punchblock::Component::Prompt.new expected_output_options, expected_input_options, barge_in: expected_barge_in
+      end
+
+      let(:reason) { Punchblock::Component::Input::Complete::NoMatch.new }
+
+      before { Punchblock::Component::Prompt.any_instance.stub complete_event: mock(reason: reason) }
+
       describe "#ask" do
-        let(:prompts) { ['http://example.com/nice-to-meet-you.mp3', 'http://example.com/press-some-buttons.mp3'] }
-
-        let :expected_ssml do
-          RubySpeech::SSML.draw do
-            audio src: 'http://example.com/nice-to-meet-you.mp3'
-            audio src: 'http://example.com/press-some-buttons.mp3'
-          end
-        end
-
-        let :expected_output_options do
-          {
-            render_document: {value: expected_ssml},
-            renderer: nil
-          }
-        end
-
         let :digit_limit_grammar do
           RubySpeech::GRXML.draw mode: 'dtmf', root: 'digits' do
             rule id: 'digits', scope: 'public' do
@@ -82,29 +106,6 @@ module AdhearsionASR
             end
           end
         end
-
-        let :expected_input_options do
-          {
-            mode: :dtmf,
-            initial_timeout: 5000,
-            inter_digit_timeout: 5000,
-            max_silence: 5000,
-            min_confidence: 0.5,
-            recognizer: nil,
-            language: 'en-US',
-            grammar: { value: expected_grxml }
-          }
-        end
-
-        let(:expected_barge_in) { true }
-
-        let :expected_prompt do
-          Punchblock::Component::Prompt.new expected_output_options, expected_input_options, barge_in: expected_barge_in
-        end
-
-        let(:reason) { Punchblock::Component::Input::Complete::NoMatch.new }
-
-        before { Punchblock::Component::Prompt.any_instance.stub complete_event: mock(reason: reason) }
 
         context "without a digit limit, terminator digit or grammar" do
           it "raises ArgumentError" do
@@ -458,6 +459,527 @@ module AdhearsionASR
               expect_component_execution expected_prompt
 
               expect { subject.ask prompts, limit: 5 }.to raise_error(AdhearsionASR::Error, /foobar/)
+            end
+          end
+        end
+      end
+
+      describe "#menu" do
+        context "with no block" do
+          it "should raise ArgumentError" do
+            expect { subject.menu }.to raise_error(ArgumentError, /specify a block to build the menu/)
+          end
+        end
+
+        context "with no matches" do
+          it "should raise ArgumentError" do
+            expect do
+              subject.menu do
+              end
+            end.to raise_error(ArgumentError, /specify one or more matches/)
+          end
+        end
+
+        context "with several matches specified" do
+          let :expected_grxml do
+            RubySpeech::GRXML.draw mode: 'dtmf', root: 'options' do
+              rule id: 'options', scope: 'public' do
+                item do
+                  one_of do
+                    item do
+                      tag { '0' }
+                      '1'
+                    end
+                  end
+                end
+              end
+            end
+          end
+
+          context "with interruptible: false" do
+            let(:expected_barge_in) { false }
+
+            it "executes a Prompt with barge-in disabled" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts, interruptible: false do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with a timeout specified" do
+            before do
+              expected_input_options.merge! initial_timeout: 10000,
+                inter_digit_timeout: 10000,
+                max_silence: 10000
+            end
+
+            it "executes a Prompt with correct timeout (initial, inter-digit & max-silence)" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts, timeout: 10 do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with a different default timeout" do
+            before do
+              expected_input_options.merge! initial_timeout: 10000,
+                inter_digit_timeout: 10000,
+                max_silence: 10000
+            end
+
+            temp_config_value :timeout, 10
+
+            it "executes a Prompt with correct timeout (initial, inter-digit & max-silence)" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with a different default minimum confidence" do
+            before do
+              expected_input_options.merge! min_confidence: 0.8
+            end
+
+            temp_config_value :min_confidence, 0.8
+
+            it "executes a Prompt with correct minimum confidence" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with a different default recognizer" do
+            before do
+              expected_input_options.merge! recognizer: 'something_else'
+            end
+
+            temp_config_value :recognizer, 'something_else'
+
+            it "executes a Prompt with correct recognizer" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with a different default input language" do
+            before do
+              expected_input_options.merge! language: 'pt-BR'
+            end
+
+            temp_config_value :input_language, 'pt-BR'
+
+            it "executes a Prompt with correct input language" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with a different default output renderer" do
+            before do
+              expected_output_options.merge! renderer: 'something_else'
+            end
+
+            temp_config_value :renderer, 'something_else'
+
+            it "executes a Prompt with correct renderer" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with overridden input options" do
+            before do
+              expected_input_options.merge! inter_digit_timeout: 35000
+            end
+
+            it "executes a Prompt with correct input options" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts, input_options: {inter_digit_timeout: 35000} do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with overridden output options" do
+            before do
+              expected_output_options.merge! max_time: 35000
+            end
+
+            it "executes a Prompt with correct output options" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts, output_options: {max_time: 35000} do
+                match(1) {}
+              end
+            end
+          end
+
+          context "when input completes with an error" do
+            let(:reason) { Punchblock::Event::Complete::Error.new details: 'foobar' }
+
+            it "should raise an error with a message of 'foobar'" do
+              expect_component_execution expected_prompt
+
+              expect do
+                subject.menu prompts do
+                  match(1) {}
+                end
+              end.to raise_error(AdhearsionASR::Error, /foobar/)
+            end
+          end
+
+          context "when input doesn't match any of the specified matches" do
+            it "runs the invalid and failure handlers" do
+              expect_component_execution expected_prompt
+              should_receive(:do_something_on_invalid).once.ordered
+              should_receive(:do_something_on_failure).once.ordered
+
+              subject.menu prompts do
+                match(1) {}
+
+                invalid { do_something_on_invalid }
+                failure { do_something_on_failure }
+              end
+            end
+
+            context "when allowed multiple tries" do
+              let :nlsml do
+                RubySpeech::NLSML.draw do
+                  interpretation confidence: 1 do
+                    input '1', mode: :dtmf
+                    instance '0'
+                  end
+                end
+              end
+
+              let(:reason2) { Punchblock::Component::Input::Complete::Match.new nlsml: nlsml }
+
+              it "executes the prompt repeatedly until it gets a match" do
+                some_controller_class = Class.new Adhearsion::CallController
+
+                expect_component_execution(expected_prompt).twice
+                should_receive(:do_something_on_invalid).once.ordered
+                should_receive(:invoke).once.with(some_controller_class, extension: '1').ordered
+                should_receive(:do_something_on_failure).never
+
+                invocation_count = 0
+                Punchblock::Component::Prompt.any_instance.stub(:complete_event) do
+                  invocation_count += 1
+                  case invocation_count
+                  when 1 then mock(reason: reason)
+                  when 2 then mock(reason: reason2)
+                  else raise('Too many attempts')
+                  end
+                end
+
+                subject.menu prompts, tries: 3 do
+                  match 1, some_controller_class
+
+                  invalid { do_something_on_invalid }
+                  failure { do_something_on_failure }
+                end
+              end
+            end
+          end
+
+          context "when we don't get any input" do
+            let(:reason) { Punchblock::Component::Input::Complete::NoInput.new }
+
+            it "runs the timeout and failure handlers" do
+              expect_component_execution expected_prompt
+              should_receive(:do_something_on_timeout).once.ordered
+              should_receive(:do_something_on_failure).once.ordered
+
+              subject.menu prompts do
+                match(1) {}
+
+                timeout { do_something_on_timeout }
+                failure { do_something_on_failure }
+              end
+            end
+
+            context "when allowed multiple tries" do
+              let :nlsml do
+                RubySpeech::NLSML.draw do
+                  interpretation confidence: 1 do
+                    input '1', mode: :dtmf
+                    instance '0'
+                  end
+                end
+              end
+
+              let(:reason2) { Punchblock::Component::Input::Complete::Match.new nlsml: nlsml }
+
+              it "executes the prompt repeatedly until it gets a match" do
+                some_controller_class = Class.new Adhearsion::CallController
+
+                expect_component_execution(expected_prompt).twice
+                should_receive(:do_something_on_timeout).once.ordered
+                should_receive(:invoke).once.with(some_controller_class, extension: '1').ordered
+                should_receive(:do_something_on_failure).never
+
+                invocation_count = 0
+                Punchblock::Component::Prompt.any_instance.stub(:complete_event) do
+                  invocation_count += 1
+                  case invocation_count
+                  when 1 then mock(reason: reason)
+                  when 2 then mock(reason: reason2)
+                  else raise('Too many attempts')
+                  end
+                end
+
+                subject.menu prompts, tries: 3 do
+                  match 1, some_controller_class
+
+                  timeout { do_something_on_timeout }
+                  failure { do_something_on_failure }
+                end
+              end
+            end
+          end
+
+          context "when the input unambiguously matches a specified match" do
+            let :expected_grxml do
+              RubySpeech::GRXML.draw mode: 'dtmf', root: 'options', tag_format: 'semantics/1.0-literals' do
+                rule id: 'options', scope: 'public' do
+                  item do
+                    one_of do
+                      item do
+                        tag { '0' }
+                        '2'
+                      end
+                      item do
+                        tag { '1' }
+                        '1'
+                      end
+                      item do
+                        tag { '2' }
+                        '3'
+                      end
+                    end
+                  end
+                end
+              end
+            end
+
+            let :nlsml do
+              RubySpeech::NLSML.draw do
+                interpretation confidence: 1 do
+                  input '3', mode: :dtmf
+                  instance '2'
+                end
+              end
+            end
+
+            let(:reason) { Punchblock::Component::Input::Complete::Match.new nlsml: nlsml }
+
+            context "which specifies a controller class" do
+              it "invokes the specfied controller, with the matched input as the :extension key in its metadata" do
+                some_controller_class = Class.new Adhearsion::CallController
+
+                expect_component_execution expected_prompt
+                should_receive(:invoke).once.with(some_controller_class, extension: '3')
+
+                subject.menu prompts do
+                  match(2) {}
+                  match(1) {}
+                  match 3, some_controller_class
+                end
+              end
+            end
+
+            context "which specifies a block to be run" do
+              it "invokes the block, passing in the input that matched" do
+                expect_component_execution expected_prompt
+                should_receive(:do_something_on_match).once.with('3')
+
+                subject.menu prompts do
+                  match(2) {}
+                  match(1) {}
+                  match(3) { |v| do_something_on_match v }
+                end
+              end
+            end
+
+            context "when the match was a set of options" do
+              let :expected_grxml do
+                RubySpeech::GRXML.draw mode: 'dtmf', root: 'options', tag_format: 'semantics/1.0-literals' do
+                  rule id: 'options', scope: 'public' do
+                    item do
+                      one_of do
+                        item do
+                          tag { '0' }
+                          '0'
+                        end
+                        item do
+                          tag { '1' }
+                          '1'
+                        end
+                        item do
+                          tag { '2' }
+                          one_of do
+                            item { '2' }
+                            item { '3' }
+                          end
+                        end
+                      end
+                    end
+                  end
+                end
+              end
+
+              it "invokes the match payload" do
+                expect_component_execution expected_prompt
+                should_receive(:do_something_on_match).once.with('3')
+
+                subject.menu prompts do
+                  match(0) {}
+                  match(1) {}
+                  match(2,3) { |v| do_something_on_match v }
+                end
+              end
+            end
+
+            context "when the match was a range" do
+              let :expected_grxml do
+                RubySpeech::GRXML.draw mode: 'dtmf', root: 'options', tag_format: 'semantics/1.0-literals' do
+                  rule id: 'options', scope: 'public' do
+                    item do
+                      one_of do
+                        item do
+                          tag { '0' }
+                          '0'
+                        end
+                        item do
+                          tag { '1' }
+                          '1'
+                        end
+                        item do
+                          tag { '2' }
+                          one_of do
+                            item { '2' }
+                            item { '3' }
+                          end
+                        end
+                      end
+                    end
+                  end
+                end
+              end
+
+              it "invokes the match payload" do
+                expect_component_execution expected_prompt
+                should_receive(:do_something_on_match).once.with('3')
+
+                subject.menu prompts do
+                  match(0) {}
+                  match(1) {}
+                  match(2..3) { |v| do_something_on_match v }
+                end
+              end
+            end
+
+            context "when the match was an array of options" do
+              let :expected_grxml do
+                RubySpeech::GRXML.draw mode: 'dtmf', root: 'options', tag_format: 'semantics/1.0-literals' do
+                  rule id: 'options', scope: 'public' do
+                    item do
+                      one_of do
+                        item do
+                          tag { '0' }
+                          '0'
+                        end
+                        item do
+                          tag { '1' }
+                          '1'
+                        end
+                        item do
+                          tag { '2' }
+                          one_of do
+                            item { '2' }
+                            item { '3' }
+                          end
+                        end
+                      end
+                    end
+                  end
+                end
+              end
+
+              it "invokes the match payload" do
+                expect_component_execution expected_prompt
+                should_receive(:do_something_on_match).once.with('3')
+
+                subject.menu prompts do
+                  match(0) {}
+                  match(1) {}
+                  match([2,3]) { |v| do_something_on_match v }
+                end
+              end
+            end
+          end
+
+          context "when the input abmiguously matches multiple specified matches" do
+            let :expected_grxml do
+              RubySpeech::GRXML.draw mode: 'dtmf', root: 'options', tag_format: 'semantics/1.0-literals' do
+                rule id: 'options', scope: 'public' do
+                  item do
+                    one_of do
+                      item do
+                        tag { '0' }
+                        '1'
+                      end
+                      item do
+                        tag { '1' }
+                        '1'
+                      end
+                    end
+                  end
+                end
+              end
+            end
+
+            let :nlsml do
+              RubySpeech::NLSML.draw do
+                interpretation confidence: 1 do
+                  input '1', mode: :dtmf
+                  instance '0'
+                  instance '1'
+                end
+              end
+            end
+
+            let(:reason) { Punchblock::Component::Input::Complete::Match.new nlsml: nlsml }
+
+            it "executes the first successful match" do
+              expect_component_execution expected_prompt
+              should_receive(:do_something_on_match).once.with('1')
+              should_receive(:do_otherthing_on_match).never
+
+              subject.menu prompts do
+                match(1) { |v| do_something_on_match v }
+                match(1) { |v| do_otherthing_on_match v }
+              end
             end
           end
         end
