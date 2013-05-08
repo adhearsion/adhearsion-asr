@@ -23,14 +23,14 @@ module AdhearsionASR
     # @option options [String] :terminator Digit to terminate input
     # @option options [RubySpeech::GRXML::Grammar, Array<RubySpeech::GRXML::Grammar>] :grammar One of a collection of grammars to execute
     # @option options [String, Array<String>] :grammar_url One of a collection of URLs for grammars to execute
-    # @option options [Hash] :input_options A hash of options passed directly to the Punchblock Input constructor
+    # @option options [Hash] :input_options A hash of options passed directly to the Punchblock Input constructor. See
     # @option options [Hash] :output_options A hash of options passed directly to the Punchblock Output constructor
     #
     # @return [Result] a result object from which the details of the response may be established
     #
     # @see Output#play
-    # @see Punchblock::Component::Input.new
-    # @see Punchblock::Component::Output.new
+    # @see http://rdoc.info/gems/punchblock/Punchblock/Component/Input.new Punchblock::Component::Input.new
+    # @see http://rdoc.info/gems/punchblock/Punchblock/Component/Output.new Punchblock::Component::Output.new
     #
     def ask(*args)
       options = args.last.kind_of?(Hash) ? args.pop : {}
