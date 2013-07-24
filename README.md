@@ -13,8 +13,8 @@ Add the following entries to your Adhearsion application's Gemfile:
 
 ```ruby
 gem 'adhearsion-asr'
-gem 'adhearsion', github: 'adhearsion', branch: 'feature/rayo_prompt'
-gem 'punchblock', github: 'adhearsion/punchblock', branch: 'feature/new_rayo'
+gem 'adhearsion', github: 'adhearsion', branch: 'develop'
+gem 'punchblock', github: 'adhearsion/punchblock', branch: 'develop'
 ```
 
 The dependencies on Adhearsion and Punchblock from git are temporary and are required because this plugin uses functionality that is unreleased in those gems (mostly changes to keep up to date with the Rayo specification; they will be released once the Rayo specification has been advanced to Draft by the XSF).
