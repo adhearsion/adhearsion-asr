@@ -435,7 +435,7 @@ module AdhearsionASR
               expect_component_execution expected_prompt
 
               result = subject.ask prompts, limit: 5
-              result.status.should be :nomatch
+              result.status.should eql(:nomatch)
               result.response.should be_nil
             end
           end
@@ -447,7 +447,19 @@ module AdhearsionASR
               expect_component_execution expected_prompt
 
               result = subject.ask prompts, limit: 5
-              result.status.should be :noinput
+              result.status.should eql(:noinput)
+              result.response.should be_nil
+            end
+          end
+
+          context "that is a hangup" do
+            let(:reason) { Punchblock::Event::Complete::Hangup.new }
+
+            it "returns :hangup status and a nil response" do
+              expect_component_execution expected_prompt
+
+              result = subject.ask prompts, limit: 5
+              result.status.should eql(:hangup)
               result.response.should be_nil
             end
           end

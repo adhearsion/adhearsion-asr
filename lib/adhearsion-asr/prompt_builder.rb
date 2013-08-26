@@ -42,8 +42,12 @@ module AdhearsionASR
           result.nlsml          = reason.nlsml
         when Punchblock::Event::Complete::Error
           raise Error, reason.details
-        when Punchblock::Event::Complete::Reason
-          result.status = reason.name
+        when Punchblock::Component::Input::Complete::NoMatch
+          result.status = :nomatch
+        when Punchblock::Component::Input::Complete::NoInput
+          result.status = :noinput
+        when Punchblock::Event::Complete::Hangup
+          result.status = :hangup
         else
           raise "Unknown completion reason received: #{reason}"
         end
