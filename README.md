@@ -9,15 +9,11 @@ Adds speech recognition support to Adhearsion as a plugin. Overrides `CallContro
 
 ## Install
 
-Add the following entries to your Adhearsion application's Gemfile:
+Add the following entry to your Adhearsion application's Gemfile:
 
 ```ruby
 gem 'adhearsion-asr'
-gem 'adhearsion', github: 'adhearsion', branch: 'develop'
-gem 'punchblock', github: 'adhearsion/punchblock', branch: 'develop'
 ```
-
-The dependencies on Adhearsion and Punchblock from git are temporary and are required because this plugin uses functionality that is unreleased in those gems (mostly changes to keep up to date with the Rayo specification; they will be released once the Rayo specification has been advanced to Draft by the XSF).
 
 Be sure to check out the plugin config by running `rake config:show` and adjust to your requirements.
 
