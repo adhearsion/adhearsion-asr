@@ -14,7 +14,7 @@ module AdhearsionASR
       subject { controller }
 
       before do
-        mock call, write_command: true, id: call_id
+        double call, write_command: true, id: call_id
       end
 
       def expect_message_waiting_for_response(message, fail = false)
@@ -90,7 +90,7 @@ module AdhearsionASR
 
       let(:reason) { Punchblock::Component::Input::Complete::NoMatch.new }
 
-      before { Punchblock::Component::Prompt.any_instance.stub complete_event: mock(reason: reason) }
+      before { Punchblock::Component::Prompt.any_instance.stub complete_event: double(reason: reason) }
 
       describe "#ask" do
         let :digit_limit_grammar do
@@ -686,8 +686,8 @@ module AdhearsionASR
                 Punchblock::Component::Prompt.any_instance.stub(:complete_event) do
                   invocation_count += 1
                   case invocation_count
-                  when 1 then mock(reason: reason)
-                  when 2 then mock(reason: reason2)
+                  when 1 then double(reason: reason)
+                  when 2 then double(reason: reason2)
                   else raise('Too many attempts')
                   end
                 end
@@ -742,8 +742,8 @@ module AdhearsionASR
                 Punchblock::Component::Prompt.any_instance.stub(:complete_event) do
                   invocation_count += 1
                   case invocation_count
-                  when 1 then mock(reason: reason)
-                  when 2 then mock(reason: reason2)
+                  when 1 then double(reason: reason)
+                  when 2 then double(reason: reason2)
                   else raise('Too many attempts')
                   end
                 end
