@@ -404,11 +404,20 @@ module AdhearsionASR
         context "when a response is received" do
           let(:expected_grxml) { digit_limit_grammar }
 
+          before { expect_component_execution expected_prompt }
+
+          let(:result) { subject.ask prompts, limit: 5 }
+
           context "that is a match" do
+            let(:mode) { :dtmf }
+            let(:utterance) { '123' }
+
             let :nlsml do
+              utterance = self.utterance
+              mode = self.mode
               RubySpeech::NLSML.draw do
                 interpretation confidence: 1 do
-                  input '123', mode: :dtmf
+                  input utterance, mode: mode
                   instance 'Foo'
                 end
               end
@@ -417,14 +426,87 @@ module AdhearsionASR
             let(:reason) { Punchblock::Component::Input::Complete::Match.new nlsml: nlsml }
 
             it "returns :match status and the response" do
-              expect_component_execution expected_prompt
-
-              result = subject.ask prompts, limit: 5
               result.status.should be :match
+              result.mode.should be :dtmf
               result.confidence.should == 1
               result.response.should == '123'
               result.interpretation.should == 'Foo'
               result.nlsml.should == nlsml.root
+            end
+
+            context "with speech input" do
+              let(:mode) { :speech }
+              let(:utterance) { 'Hello world' }
+
+              it "should not alter the utterance" do
+                result.response.should == 'Hello world'
+              end
+            end
+
+            context "with a single DTMF digit" do
+              context 'with dtmf- prefixes' do
+                let(:utterance) { 'dtmf-3' }
+
+                it "removes dtmf- previxes" do
+                  result.response.should be == '3'
+                end
+              end
+
+              context 'with "star"' do
+                let(:utterance) { "dtmf-star" }
+
+                it "interprets as *" do
+                  result.response.should be == '*'
+                end
+              end
+
+              context 'with "*"' do
+                let(:utterance) { '*' }
+
+                it "interprets as *" do
+                  result.response.should be == '*'
+                end
+              end
+
+              context 'with "pound"' do
+                let(:utterance) { 'dtmf-pound' }
+
+                it "interprets pound as #" do
+                  result.response.should be == '#'
+                end
+              end
+
+              context 'with "#"' do
+                let(:utterance) { '#' }
+
+                it "interprets # as #" do
+                  result.response.should be == '#'
+                end
+              end
+
+              context 'without a dtmf- prefix' do
+                let(:utterance) { '1' }
+
+                it "correctly interprets the digits" do
+                  result.response.should be == '1'
+                end
+              end
+
+              context 'with "star"' do
+                let(:utterance) { nil }
+
+                it "is nil when response is nil" do
+                  result.response.should be == nil
+                end
+              end
+            end
+
+            context "with multiple digits separated by spaces" do
+              let(:utterance) { '1 dtmf-5 dtmf-star # 2' }
+
+              it "returns the digits without space separation" do
+                result.response.should be == '15*#2'
+              end
             end
           end
 
@@ -432,9 +514,6 @@ module AdhearsionASR
             let(:reason) { Punchblock::Component::Input::Complete::NoMatch.new }
 
             it "returns :nomatch status and a nil response" do
-              expect_component_execution expected_prompt
-
-              result = subject.ask prompts, limit: 5
               result.status.should eql(:nomatch)
               result.response.should be_nil
             end
@@ -444,9 +523,6 @@ module AdhearsionASR
             let(:reason) { Punchblock::Component::Input::Complete::NoInput.new }
 
             it "returns :noinput status and a nil response" do
-              expect_component_execution expected_prompt
-
-              result = subject.ask prompts, limit: 5
               result.status.should eql(:noinput)
               result.response.should be_nil
             end
@@ -456,9 +532,6 @@ module AdhearsionASR
             let(:reason) { Punchblock::Event::Complete::Hangup.new }
 
             it "returns :hangup status and a nil response" do
-              expect_component_execution expected_prompt
-
-              result = subject.ask prompts, limit: 5
               result.status.should eql(:hangup)
               result.response.should be_nil
             end
@@ -468,8 +541,6 @@ module AdhearsionASR
             let(:reason) { Punchblock::Event::Complete::Error.new details: 'foobar' }
 
             it "should raise an error with a message of 'foobar" do
-              expect_component_execution expected_prompt
-
               expect { subject.ask prompts, limit: 5 }.to raise_error(AdhearsionASR::Error, /foobar/)
             end
           end

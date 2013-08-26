@@ -36,6 +36,7 @@ module AdhearsionASR
         case reason
         when proc { |r| r.respond_to? :nlsml }
           result.status         = :match
+          result.mode           = reason.mode
           result.confidence     = reason.confidence
           result.response       = reason.utterance
           result.interpretation = reason.interpretation
