@@ -26,7 +26,7 @@ module AdhearsionASR
     # @option options [Hash] :input_options A hash of options passed directly to the Punchblock Input constructor. See
     # @option options [Hash] :output_options A hash of options passed directly to the Punchblock Output constructor
     #
-    # @return [Result] a result object from which the details of the response may be established
+    # @return [Result] a result object from which the details of the utterance may be established
     #
     # @see Output#play
     # @see http://rdoc.info/gems/punchblock/Punchblock/Component/Input.new Punchblock::Component::Input.new
@@ -92,7 +92,7 @@ module AdhearsionASR
     # @option options [Hash] :input_options A hash of options passed directly to the Punchblock Input constructor
     # @option options [Hash] :output_options A hash of options passed directly to the Punchblock Output constructor
     #
-    # @return [Result] a result object from which the details of the response may be established
+    # @return [Result] a result object from which the details of the utterance may be established
     #
     # @see Output#play
     # @see CallController#pass

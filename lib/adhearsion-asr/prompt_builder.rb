@@ -38,7 +38,7 @@ module AdhearsionASR
           result.status         = :match
           result.mode           = reason.mode
           result.confidence     = reason.confidence
-          result.response       = reason.utterance
+          result.utterance      = reason.utterance
           result.interpretation = reason.interpretation
           result.nlsml          = reason.nlsml
         when Punchblock::Event::Complete::Error

@@ -63,7 +63,7 @@ module AdhearsionASR
 
     def handle_match(result)
       match = @matchers[result.interpretation.to_i]
-      match.dispatch @context, result.response
+      match.dispatch @context, result.utterance
       throw :match
     end
 
@@ -93,11 +93,11 @@ module AdhearsionASR
     end
 
     Matcher = Struct.new(:payload, :keys) do
-      def dispatch(controller, response)
+      def dispatch(controller, utterance)
         if payload.is_a?(Proc)
-          controller.instance_exec response, &payload
+          controller.instance_exec utterance, &payload
         else
-          controller.invoke payload, extension: response
+          controller.invoke payload, extension: utterance
         end
       end
 

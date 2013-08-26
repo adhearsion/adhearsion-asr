@@ -29,7 +29,7 @@ class MyController < Adhearsion::CallController
     result = ask limit: 5
     case result.status
     when :match
-      speak "You entered #{result.response}"
+      speak "You entered #{result.utterance}"
     when :noinput
       speak "Hellooo? Anyone there?"
     when :nomatch
@@ -49,7 +49,7 @@ class MyController < Adhearsion::CallController
     result = ask terminator: '#'
     case result.status
     when :match
-      speak "You entered #{result.response}"
+      speak "You entered #{result.utterance}"
     when :noinput
       speak "Hellooo? Anyone there?"
     when :nomatch
@@ -78,7 +78,7 @@ class MyController < Adhearsion::CallController
     result = ask grammar: grammar, input_options: { mode: :speech }
     case result.status
     when :match
-      speak "You said #{result.response}"
+      speak "You said #{result.utterance}"
     when :noinput
       speak "Hellooo? Anyone there?"
     when :nomatch
@@ -98,7 +98,7 @@ class MyController < Adhearsion::CallController
     result = ask grammar_url: 'http://example.com/mygrammar.grxml', input_options: { mode: :speech }
     case result.status
     when :match
-      speak "You said #{result.response}"
+      speak "You said #{result.utterance}"
     when :noinput
       speak "Hellooo? Anyone there?"
     when :nomatch

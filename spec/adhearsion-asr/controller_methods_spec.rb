@@ -17,8 +17,8 @@ module AdhearsionASR
         double call, write_command: true, id: call_id
       end
 
-      def expect_message_waiting_for_response(message, fail = false)
-        expectation = controller.should_receive(:write_and_await_response).with message
+      def expect_message_waiting_for_utterance(message, fail = false)
+        expectation = controller.should_receive(:write_and_await_utterance).with message
         if fail
           expectation.and_raise fail
         else
@@ -26,8 +26,8 @@ module AdhearsionASR
         end
       end
 
-      def expect_message_of_type_waiting_for_response(message)
-        controller.should_receive(:write_and_await_response).with(message.class).and_return message
+      def expect_message_of_type_waiting_for_utterance(message)
+        controller.should_receive(:write_and_await_utterance).with(message.class).and_return message
       end
 
       def expect_component_execution(component, fail = false)
@@ -401,7 +401,7 @@ module AdhearsionASR
           end
         end
 
-        context "when a response is received" do
+        context "when a utterance is received" do
           let(:expected_grxml) { digit_limit_grammar }
 
           before { expect_component_execution expected_prompt }
@@ -425,11 +425,11 @@ module AdhearsionASR
 
             let(:reason) { Punchblock::Component::Input::Complete::Match.new nlsml: nlsml }
 
-            it "returns :match status and the response" do
+            it "returns :match status and the utterance" do
               result.status.should be :match
               result.mode.should be :dtmf
               result.confidence.should == 1
-              result.response.should == '123'
+              result.utterance.should == '123'
               result.interpretation.should == 'Foo'
               result.nlsml.should == nlsml.root
             end
@@ -439,7 +439,7 @@ module AdhearsionASR
               let(:utterance) { 'Hello world' }
 
               it "should not alter the utterance" do
-                result.response.should == 'Hello world'
+                result.utterance.should == 'Hello world'
               end
             end
 
@@ -448,7 +448,7 @@ module AdhearsionASR
                 let(:utterance) { 'dtmf-3' }
 
                 it "removes dtmf- previxes" do
-                  result.response.should be == '3'
+                  result.utterance.should be == '3'
                 end
               end
 
@@ -456,7 +456,7 @@ module AdhearsionASR
                 let(:utterance) { "dtmf-star" }
 
                 it "interprets as *" do
-                  result.response.should be == '*'
+                  result.utterance.should be == '*'
                 end
               end
 
@@ -464,7 +464,7 @@ module AdhearsionASR
                 let(:utterance) { '*' }
 
                 it "interprets as *" do
-                  result.response.should be == '*'
+                  result.utterance.should be == '*'
                 end
               end
 
@@ -472,7 +472,7 @@ module AdhearsionASR
                 let(:utterance) { 'dtmf-pound' }
 
                 it "interprets pound as #" do
-                  result.response.should be == '#'
+                  result.utterance.should be == '#'
                 end
               end
 
@@ -480,7 +480,7 @@ module AdhearsionASR
                 let(:utterance) { '#' }
 
                 it "interprets # as #" do
-                  result.response.should be == '#'
+                  result.utterance.should be == '#'
                 end
               end
 
@@ -488,15 +488,15 @@ module AdhearsionASR
                 let(:utterance) { '1' }
 
                 it "correctly interprets the digits" do
-                  result.response.should be == '1'
+                  result.utterance.should be == '1'
                 end
               end
 
               context 'with "star"' do
                 let(:utterance) { nil }
 
-                it "is nil when response is nil" do
-                  result.response.should be == nil
+                it "is nil when utterance is nil" do
+                  result.utterance.should be == nil
                 end
               end
             end
@@ -505,7 +505,7 @@ module AdhearsionASR
               let(:utterance) { '1 dtmf-5 dtmf-star # 2' }
 
               it "returns the digits without space separation" do
-                result.response.should be == '15*#2'
+                result.utterance.should be == '15*#2'
               end
             end
           end
@@ -513,27 +513,27 @@ module AdhearsionASR
           context "that is a nomatch" do
             let(:reason) { Punchblock::Component::Input::Complete::NoMatch.new }
 
-            it "returns :nomatch status and a nil response" do
+            it "returns :nomatch status and a nil utterance" do
               result.status.should eql(:nomatch)
-              result.response.should be_nil
+              result.utterance.should be_nil
             end
           end
 
           context "that is a noinput" do
             let(:reason) { Punchblock::Component::Input::Complete::NoInput.new }
 
-            it "returns :noinput status and a nil response" do
+            it "returns :noinput status and a nil utterance" do
               result.status.should eql(:noinput)
-              result.response.should be_nil
+              result.utterance.should be_nil
             end
           end
 
           context "that is a hangup" do
             let(:reason) { Punchblock::Event::Complete::Hangup.new }
 
-            it "returns :hangup status and a nil response" do
+            it "returns :hangup status and a nil utterance" do
               result.status.should eql(:hangup)
-              result.response.should be_nil
+              result.utterance.should be_nil
             end
           end
 

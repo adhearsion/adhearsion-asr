@@ -1,15 +1,15 @@
 module AdhearsionASR
-  Result = Struct.new(:status, :mode, :confidence, :response, :interpretation, :nlsml) do
+  Result = Struct.new(:status, :mode, :confidence, :utterance, :interpretation, :nlsml) do
     def to_s
-      response
+      utterance
     end
 
     def inspect
-      "#<#{self.class} status=#{status.inspect}, confidence=#{confidence.inspect}, response=#{response.inspect}, interpretation=#{interpretation.inspect}, nlsml=#{nlsml.inspect}>"
+      "#<#{self.class} status=#{status.inspect}, confidence=#{confidence.inspect}, utterance=#{utterance.inspect}, interpretation=#{interpretation.inspect}, nlsml=#{nlsml.inspect}>"
     end
 
-    def response=(other)
-      self[:response] = mode == :dtmf ? parse_dtmf(other) : other
+    def utterance=(other)
+      self[:utterance] = mode == :dtmf ? parse_dtmf(other) : other
     end
 
     private
