@@ -424,7 +424,7 @@ module AdhearsionASR
               result.confidence.should == 1
               result.response.should == '123'
               result.interpretation.should == 'Foo'
-              result.nlsml.should == nlsml
+              result.nlsml.should == nlsml.root
             end
           end
 
