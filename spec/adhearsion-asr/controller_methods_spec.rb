@@ -40,13 +40,13 @@ module AdhearsionASR
         expectation
       end
 
-      def self.temp_config_value(key, value)
+      def self.temp_config_value(key, value, namespace = Plugin.config)
         before do
-          @original_value = Plugin.config[key]
-          Plugin.config[key] = value
+          @original_value = namespace[key]
+          namespace[key] = value
         end
 
-        after { Plugin.config[key] = @original_value }
+        after { namespace[key] = @original_value }
       end
 
       before do
@@ -364,9 +364,25 @@ module AdhearsionASR
             expected_output_options.merge! renderer: 'something_else'
           end
 
-          temp_config_value :renderer, 'something_else'
+          temp_config_value :default_renderer, 'something_else', Adhearsion.config.platform.media
 
           it "executes a Prompt with correct renderer" do
+            expect_component_execution expected_prompt
+
+            subject.ask prompts, limit: 5
+          end
+        end
+
+        context "with a different default output voice" do
+          let(:expected_grxml) { digit_limit_grammar }
+
+          before do
+            expected_output_options.merge! voice: 'something_else'
+          end
+
+          temp_config_value :default_voice, 'something_else', Adhearsion.config.platform.media
+
+          it "executes a Prompt with correct voice" do
             expect_component_execution expected_prompt
 
             subject.ask prompts, limit: 5
@@ -678,9 +694,25 @@ module AdhearsionASR
               expected_output_options.merge! renderer: 'something_else'
             end
 
-            temp_config_value :renderer, 'something_else'
+            temp_config_value :default_renderer, 'something_else', Adhearsion.config.platform.media
 
             it "executes a Prompt with correct renderer" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with a different default output voice" do
+            before do
+              expected_output_options.merge! voice: 'something_else'
+            end
+
+            temp_config_value :default_voice, 'something_else', Adhearsion.config.platform.media
+
+            it "executes a Prompt with correct voice" do
               expect_component_execution expected_prompt
 
               subject.menu prompts do

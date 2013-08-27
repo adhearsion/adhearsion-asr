@@ -5,7 +5,8 @@ module AdhearsionASR
     def initialize(output_document, grammars, options)
       output_options = {
         render_document: {value: output_document},
-        renderer: Plugin.config.renderer
+        renderer: Adhearsion.config.platform.media.default_renderer,
+        voice: Adhearsion.config.platform.media.default_voice
       }.merge(options[:output_options] || {})
 
       input_options = {
