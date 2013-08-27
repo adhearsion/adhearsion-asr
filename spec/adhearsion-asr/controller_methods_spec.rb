@@ -121,6 +121,19 @@ module AdhearsionASR
 
             subject.ask prompts, limit: 5
           end
+
+          context "with a block passed" do
+            it "executes but logs a warning about the block validator" do
+              expect_component_execution expected_prompt
+              call.logger.should_receive(:warn).with(/validator/)
+              target = double
+              target.should_receive(:foo).never
+
+              subject.ask prompts, limit: 5 do |buffer|
+                target.foo
+              end
+            end
+          end
         end
 
         context "with a terminator" do

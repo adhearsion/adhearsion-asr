@@ -36,6 +36,10 @@ module AdhearsionASR
       options = args.last.kind_of?(Hash) ? args.pop : {}
       prompts = args.flatten
 
+      if block_given?
+        logger.warn "You passed a block to #ask, but this functionality is not available in adhearsion-asr. If you're looking for the block validator functionality, you should avoid using it in favour of grammars, and it is deprecated in Adhearsion Core."
+      end
+
       options[:grammar] || options[:grammar_url] || options[:limit] || options[:terminator] || raise(ArgumentError, "You must specify at least one of limit, terminator or grammar")
 
       output_document = output_formatter.ssml_for_collection(prompts)
