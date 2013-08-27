@@ -19,8 +19,8 @@ Gem::Specification.new do |s|
 
   # s.add_runtime_dependency %q<adhearsion>, ["~> 2.4"]
   # s.add_runtime_dependency %q<punchblock>, ["~> 2.0"]
-  s.add_runtime_dependency %q<adhearsion>, ["~> 2.4.0.beta2"]
-  s.add_runtime_dependency %q<punchblock>, ["~> 2.0.0.beta1"]
+  s.add_runtime_dependency %q<adhearsion>, ["~> 2.4.0.beta3"]
+  s.add_runtime_dependency %q<punchblock>, ["~> 2.0.0.beta2"]
   s.add_runtime_dependency %q<ruby_speech>, ["~> 2.1"]
 
   s.add_development_dependency %q<bundler>, ["~> 1.0"]
