@@ -17,14 +17,20 @@ gem 'adhearsion-asr'
 
 Be sure to check out the plugin config by running `rake config:show` and adjust to your requirements.
 
+By default, this plugin overrides Adhearsion core's implementations of #ask and #menu with its own. To turn off this behaviour, set the `auto_include` option (see `rake config:show`) to false and include manually in controllers like so:
+
+```ruby
+class MyController < Adhearsion::CallController
+  include AdhearsionASR::ControllerMethods
+end
+```
+
 ## Examples
 
 ### Simple collection of 5 DTMF digits
 
 ```ruby
 class MyController < Adhearsion::CallController
-  include AdhearsionASR::ControllerMethods
-
   def run
     result = ask limit: 5
     case result.status
@@ -43,8 +49,6 @@ end
 
 ```ruby
 class MyController < Adhearsion::CallController
-  include AdhearsionASR::ControllerMethods
-
   def run
     result = ask terminator: '#'
     case result.status
@@ -63,8 +67,6 @@ end
 
 ```ruby
 class MyController < Adhearsion::CallController
-  include AdhearsionASR::ControllerMethods
-
   def run
     grammar = RubySpeech::GRXML.draw root: 'main', language: 'en-us', mode: :voice do
       rule id: 'main', scope: 'public' do
@@ -92,8 +94,6 @@ end
 
 ```ruby
 class MyController < Adhearsion::CallController
-  include AdhearsionASR::ControllerMethods
-
   def run
     result = ask grammar_url: 'http://example.com/mygrammar.grxml', input_options: { mode: :speech }
     case result.status

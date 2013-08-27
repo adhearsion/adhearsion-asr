@@ -50,7 +50,7 @@ module AdhearsionASR
       end
 
       before do
-        controller.extend AdhearsionASR::ControllerMethods
+        Adhearsion::Plugin.init_plugins
       end
 
       let(:prompts) { ['http://example.com/nice-to-meet-you.mp3', 'http://example.com/press-some-buttons.mp3'] }
