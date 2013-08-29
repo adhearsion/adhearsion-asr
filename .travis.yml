@@ -8,6 +8,6 @@ rvm:
   - ruby-head
 matrix:
   allow_failures:
-    - rvm: jruby-19mode
+    - rvm: ruby-head
 notifications:
   irc: "irc.freenode.org#adhearsion"

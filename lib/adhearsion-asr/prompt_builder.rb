@@ -5,7 +5,8 @@ module AdhearsionASR
     def initialize(output_document, grammars, options)
       output_options = {
         render_document: {value: output_document},
-        renderer: Plugin.config.renderer
+        renderer: Adhearsion.config.platform.media.default_renderer,
+        voice: Adhearsion.config.platform.media.default_voice
       }.merge(options[:output_options] || {})
 
       input_options = {
@@ -36,14 +37,19 @@ module AdhearsionASR
         case reason
         when proc { |r| r.respond_to? :nlsml }
           result.status         = :match
+          result.mode           = reason.mode
           result.confidence     = reason.confidence
-          result.response       = reason.utterance
+          result.utterance      = reason.utterance
           result.interpretation = reason.interpretation
           result.nlsml          = reason.nlsml
         when Punchblock::Event::Complete::Error
           raise Error, reason.details
-        when Punchblock::Event::Complete::Reason
-          result.status = reason.name
+        when Punchblock::Component::Input::Complete::NoMatch
+          result.status = :nomatch
+        when Punchblock::Component::Input::Complete::NoInput
+          result.status = :noinput
+        when Punchblock::Event::Complete::Hangup
+          result.status = :hangup
         else
           raise "Unknown completion reason received: #{reason}"
         end

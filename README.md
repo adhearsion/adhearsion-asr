@@ -9,17 +9,21 @@ Adds speech recognition support to Adhearsion as a plugin. Overrides `CallContro
 
 ## Install
 
-Add the following entries to your Adhearsion application's Gemfile:
+Add the following entry to your Adhearsion application's Gemfile:
 
 ```ruby
 gem 'adhearsion-asr'
-gem 'adhearsion', github: 'adhearsion', branch: 'feature/rayo_prompt'
-gem 'punchblock', github: 'adhearsion/punchblock', branch: 'feature/new_rayo'
 ```
 
-The dependencies on Adhearsion and Punchblock from git are temporary and are required because this plugin uses functionality that is unreleased in those gems (mostly changes to keep up to date with the Rayo specification; they will be released once the Rayo specification has been advanced to Draft by the XSF).
-
 Be sure to check out the plugin config by running `rake config:show` and adjust to your requirements.
+
+By default, this plugin overrides Adhearsion core's implementations of #ask and #menu with its own. To turn off this behaviour, set the `auto_include` option (see `rake config:show`) to false and include manually in controllers like so:
+
+```ruby
+class MyController < Adhearsion::CallController
+  include AdhearsionASR::ControllerMethods
+end
+```
 
 ## Examples
 
@@ -27,13 +31,11 @@ Be sure to check out the plugin config by running `rake config:show` and adjust 
 
 ```ruby
 class MyController < Adhearsion::CallController
-  include AdhearsionASR::ControllerMethods
-
   def run
     result = ask limit: 5
     case result.status
     when :match
-      speak "You entered #{result.response}"
+      speak "You entered #{result.utterance}"
     when :noinput
       speak "Hellooo? Anyone there?"
     when :nomatch
@@ -47,13 +49,11 @@ end
 
 ```ruby
 class MyController < Adhearsion::CallController
-  include AdhearsionASR::ControllerMethods
-
   def run
     result = ask terminator: '#'
     case result.status
     when :match
-      speak "You entered #{result.response}"
+      speak "You entered #{result.utterance}"
     when :noinput
       speak "Hellooo? Anyone there?"
     when :nomatch
@@ -67,8 +67,6 @@ end
 
 ```ruby
 class MyController < Adhearsion::CallController
-  include AdhearsionASR::ControllerMethods
-
   def run
     grammar = RubySpeech::GRXML.draw root: 'main', language: 'en-us', mode: :voice do
       rule id: 'main', scope: 'public' do
@@ -82,7 +80,7 @@ class MyController < Adhearsion::CallController
     result = ask grammar: grammar, input_options: { mode: :speech }
     case result.status
     when :match
-      speak "You said #{result.response}"
+      speak "You said #{result.utterance}"
     when :noinput
       speak "Hellooo? Anyone there?"
     when :nomatch
@@ -96,13 +94,11 @@ end
 
 ```ruby
 class MyController < Adhearsion::CallController
-  include AdhearsionASR::ControllerMethods
-
   def run
     result = ask grammar_url: 'http://example.com/mygrammar.grxml', input_options: { mode: :speech }
     case result.status
     when :match
-      speak "You said #{result.response}"
+      speak "You said #{result.utterance}"
     when :noinput
       speak "Hellooo? Anyone there?"
     when :nomatch

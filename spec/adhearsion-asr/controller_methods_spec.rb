@@ -14,11 +14,11 @@ module AdhearsionASR
       subject { controller }
 
       before do
-        mock call, write_command: true, id: call_id
+        double call, write_command: true, id: call_id
       end
 
-      def expect_message_waiting_for_response(message, fail = false)
-        expectation = controller.should_receive(:write_and_await_response).with message
+      def expect_message_waiting_for_utterance(message, fail = false)
+        expectation = controller.should_receive(:write_and_await_utterance).with message
         if fail
           expectation.and_raise fail
         else
@@ -26,8 +26,8 @@ module AdhearsionASR
         end
       end
 
-      def expect_message_of_type_waiting_for_response(message)
-        controller.should_receive(:write_and_await_response).with(message.class).and_return message
+      def expect_message_of_type_waiting_for_utterance(message)
+        controller.should_receive(:write_and_await_utterance).with(message.class).and_return message
       end
 
       def expect_component_execution(component, fail = false)
@@ -40,17 +40,17 @@ module AdhearsionASR
         expectation
       end
 
-      def self.temp_config_value(key, value)
+      def self.temp_config_value(key, value, namespace = Plugin.config)
         before do
-          @original_value = Plugin.config[key]
-          Plugin.config[key] = value
+          @original_value = namespace[key]
+          namespace[key] = value
         end
 
-        after { Plugin.config[key] = @original_value }
+        after { namespace[key] = @original_value }
       end
 
       before do
-        controller.extend AdhearsionASR::ControllerMethods
+        Adhearsion::Plugin.init_plugins
       end
 
       let(:prompts) { ['http://example.com/nice-to-meet-you.mp3', 'http://example.com/press-some-buttons.mp3'] }
@@ -90,7 +90,7 @@ module AdhearsionASR
 
       let(:reason) { Punchblock::Component::Input::Complete::NoMatch.new }
 
-      before { Punchblock::Component::Prompt.any_instance.stub complete_event: mock(reason: reason) }
+      before { Punchblock::Component::Prompt.any_instance.stub complete_event: double(reason: reason) }
 
       describe "#ask" do
         let :digit_limit_grammar do
@@ -120,6 +120,19 @@ module AdhearsionASR
             expect_component_execution expected_prompt
 
             subject.ask prompts, limit: 5
+          end
+
+          context "with a block passed" do
+            it "executes but logs a warning about the block validator" do
+              expect_component_execution expected_prompt
+              call.logger.should_receive(:warn).with(/validator/)
+              target = double
+              target.should_receive(:foo).never
+
+              subject.ask prompts, limit: 5 do |buffer|
+                target.foo
+              end
+            end
           end
         end
 
@@ -364,9 +377,25 @@ module AdhearsionASR
             expected_output_options.merge! renderer: 'something_else'
           end
 
-          temp_config_value :renderer, 'something_else'
+          temp_config_value :default_renderer, 'something_else', Adhearsion.config.platform.media
 
           it "executes a Prompt with correct renderer" do
+            expect_component_execution expected_prompt
+
+            subject.ask prompts, limit: 5
+          end
+        end
+
+        context "with a different default output voice" do
+          let(:expected_grxml) { digit_limit_grammar }
+
+          before do
+            expected_output_options.merge! voice: 'something_else'
+          end
+
+          temp_config_value :default_voice, 'something_else', Adhearsion.config.platform.media
+
+          it "executes a Prompt with correct voice" do
             expect_component_execution expected_prompt
 
             subject.ask prompts, limit: 5
@@ -401,14 +430,23 @@ module AdhearsionASR
           end
         end
 
-        context "when a response is received" do
+        context "when a utterance is received" do
           let(:expected_grxml) { digit_limit_grammar }
 
+          before { expect_component_execution expected_prompt }
+
+          let(:result) { subject.ask prompts, limit: 5 }
+
           context "that is a match" do
+            let(:mode) { :dtmf }
+            let(:utterance) { '123' }
+
             let :nlsml do
+              utterance = self.utterance
+              mode = self.mode
               RubySpeech::NLSML.draw do
                 interpretation confidence: 1 do
-                  input '123', mode: :dtmf
+                  input utterance, mode: mode
                   instance 'Foo'
                 end
               end
@@ -416,39 +454,115 @@ module AdhearsionASR
 
             let(:reason) { Punchblock::Component::Input::Complete::Match.new nlsml: nlsml }
 
-            it "returns :match status and the response" do
-              expect_component_execution expected_prompt
-
-              result = subject.ask prompts, limit: 5
+            it "returns :match status and the utterance" do
               result.status.should be :match
+              result.mode.should be :dtmf
               result.confidence.should == 1
-              result.response.should == '123'
+              result.utterance.should == '123'
               result.interpretation.should == 'Foo'
-              result.nlsml.should == nlsml
+              result.nlsml.should == nlsml.root
+            end
+
+            context "with speech input" do
+              let(:mode) { :speech }
+              let(:utterance) { 'Hello world' }
+
+              it "should not alter the utterance" do
+                result.utterance.should == 'Hello world'
+              end
+            end
+
+            context "with a single DTMF digit" do
+              context 'with dtmf- prefixes' do
+                let(:utterance) { 'dtmf-3' }
+
+                it "removes dtmf- previxes" do
+                  result.utterance.should be == '3'
+                end
+              end
+
+              context 'with "star"' do
+                let(:utterance) { "dtmf-star" }
+
+                it "interprets as *" do
+                  result.utterance.should be == '*'
+                end
+              end
+
+              context 'with "*"' do
+                let(:utterance) { '*' }
+
+                it "interprets as *" do
+                  result.utterance.should be == '*'
+                end
+              end
+
+              context 'with "pound"' do
+                let(:utterance) { 'dtmf-pound' }
+
+                it "interprets pound as #" do
+                  result.utterance.should be == '#'
+                end
+              end
+
+              context 'with "#"' do
+                let(:utterance) { '#' }
+
+                it "interprets # as #" do
+                  result.utterance.should be == '#'
+                end
+              end
+
+              context 'without a dtmf- prefix' do
+                let(:utterance) { '1' }
+
+                it "correctly interprets the digits" do
+                  result.utterance.should be == '1'
+                end
+              end
+
+              context 'with "star"' do
+                let(:utterance) { nil }
+
+                it "is nil when utterance is nil" do
+                  result.utterance.should be == nil
+                end
+              end
+            end
+
+            context "with multiple digits separated by spaces" do
+              let(:utterance) { '1 dtmf-5 dtmf-star # 2' }
+
+              it "returns the digits without space separation" do
+                result.utterance.should be == '15*#2'
+              end
             end
           end
 
           context "that is a nomatch" do
             let(:reason) { Punchblock::Component::Input::Complete::NoMatch.new }
 
-            it "returns :nomatch status and a nil response" do
-              expect_component_execution expected_prompt
-
-              result = subject.ask prompts, limit: 5
-              result.status.should be :nomatch
-              result.response.should be_nil
+            it "returns :nomatch status and a nil utterance" do
+              result.status.should eql(:nomatch)
+              result.utterance.should be_nil
             end
           end
 
           context "that is a noinput" do
             let(:reason) { Punchblock::Component::Input::Complete::NoInput.new }
 
-            it "returns :noinput status and a nil response" do
-              expect_component_execution expected_prompt
+            it "returns :noinput status and a nil utterance" do
+              result.status.should eql(:noinput)
+              result.utterance.should be_nil
+            end
+          end
 
-              result = subject.ask prompts, limit: 5
-              result.status.should be :noinput
-              result.response.should be_nil
+          context "that is a hangup" do
+            let(:reason) { Punchblock::Event::Complete::Hangup.new }
+
+            it "returns :hangup status and a nil utterance" do
+              result.status.should eql(:hangup)
+              result.utterance.should be_nil
             end
           end
 
@@ -456,8 +570,6 @@ module AdhearsionASR
             let(:reason) { Punchblock::Event::Complete::Error.new details: 'foobar' }
 
             it "should raise an error with a message of 'foobar" do
-              expect_component_execution expected_prompt
-
               expect { subject.ask prompts, limit: 5 }.to raise_error(AdhearsionASR::Error, /foobar/)
             end
           end
@@ -595,9 +707,25 @@ module AdhearsionASR
               expected_output_options.merge! renderer: 'something_else'
             end
 
-            temp_config_value :renderer, 'something_else'
+            temp_config_value :default_renderer, 'something_else', Adhearsion.config.platform.media
 
             it "executes a Prompt with correct renderer" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with a different default output voice" do
+            before do
+              expected_output_options.merge! voice: 'something_else'
+            end
+
+            temp_config_value :default_voice, 'something_else', Adhearsion.config.platform.media
+
+            it "executes a Prompt with correct voice" do
               expect_component_execution expected_prompt
 
               subject.menu prompts do
@@ -686,8 +814,8 @@ module AdhearsionASR
                 Punchblock::Component::Prompt.any_instance.stub(:complete_event) do
                   invocation_count += 1
                   case invocation_count
-                  when 1 then mock(reason: reason)
-                  when 2 then mock(reason: reason2)
+                  when 1 then double(reason: reason)
+                  when 2 then double(reason: reason2)
                   else raise('Too many attempts')
                   end
                 end
@@ -742,8 +870,8 @@ module AdhearsionASR
                 Punchblock::Component::Prompt.any_instance.stub(:complete_event) do
                   invocation_count += 1
                   case invocation_count
-                  when 1 then mock(reason: reason)
-                  when 2 then mock(reason: reason2)
+                  when 1 then double(reason: reason)
+                  when 2 then double(reason: reason2)
                   else raise('Too many attempts')
                   end
                 end
