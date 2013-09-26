@@ -55,16 +55,24 @@ module AdhearsionASR
 
       let(:prompts) { ['http://example.com/nice-to-meet-you.mp3', 'http://example.com/press-some-buttons.mp3'] }
 
-      let :expected_ssml do
-        RubySpeech::SSML.draw do
-          audio src: 'http://example.com/nice-to-meet-you.mp3'
-          audio src: 'http://example.com/press-some-buttons.mp3'
-        end
+      let :expected_documents do
+        [
+          {
+            value: RubySpeech::SSML.draw do
+              audio src: 'http://example.com/nice-to-meet-you.mp3'
+            end
+          },
+          {
+            value: RubySpeech::SSML.draw do
+              audio src: 'http://example.com/press-some-buttons.mp3'
+            end
+          }
+        ]
       end
 
       let :expected_output_options do
         {
-          render_document: {value: expected_ssml},
+          render_documents: expected_documents,
           renderer: nil
         }
       end

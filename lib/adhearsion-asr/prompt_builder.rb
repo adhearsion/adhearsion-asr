@@ -2,9 +2,9 @@ require 'adhearsion-asr/result'
 
 module AdhearsionASR
   class PromptBuilder
-    def initialize(output_document, grammars, options)
+    def initialize(output_documents, grammars, options)
       output_options = {
-        render_document: {value: output_document},
+        render_documents: output_documents,
         renderer: Adhearsion.config.platform.media.default_renderer,
         voice: Adhearsion.config.platform.media.default_voice
       }.merge(options[:output_options] || {})

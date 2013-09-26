@@ -27,10 +27,10 @@ module AdhearsionASR
       register_user_supplied_callback :failure, &block
     end
 
-    def execute(output_document, controller)
+    def execute(output_documents, controller)
       catch :match do
         (@options[:tries] || 1).times do
-          result = PromptBuilder.new(output_document, grammars, @options).execute(controller)
+          result = PromptBuilder.new(output_documents, grammars, @options).execute(controller)
           process_result result
         end
         execute_hook :failure

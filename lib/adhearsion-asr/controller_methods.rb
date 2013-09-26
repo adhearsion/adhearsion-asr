@@ -42,10 +42,10 @@ module AdhearsionASR
 
       options[:grammar] || options[:grammar_url] || options[:limit] || options[:terminator] || raise(ArgumentError, "You must specify at least one of limit, terminator or grammar")
 
-      output_document = output_formatter.ssml_for_collection(prompts)
+      output_documents = output_formatter.separate_ssml_for_collection(prompts).map { |doc| { value: doc } }
       grammars = AskGrammarBuilder.new(options).grammars
 
-      PromptBuilder.new(output_document, grammars, options).execute self
+      PromptBuilder.new(output_documents, grammars, options).execute self
     end
 
     # Creates and manages a multiple choice menu driven by DTMF, handling playback of prompts,
@@ -108,9 +108,9 @@ module AdhearsionASR
 
       menu_builder = MenuBuilder.new(options, &block)
 
-      output_document = output_formatter.ssml_for_collection(prompts)
+      output_documents = output_formatter.separate_ssml_for_collection(prompts).map { |doc| { value: doc } }
 
-      menu_builder.execute output_document, self
+      menu_builder.execute output_documents, self
     end
   end
 end
