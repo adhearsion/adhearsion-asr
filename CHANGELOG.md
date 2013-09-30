@@ -1,4 +1,6 @@
 # [develop](https://github.com/adhearsion/adhearsion-asr)
+
+# [v1.0.1](https://github.com/adhearsion/adhearsion-asr/compare/1.0.0...1.0.1) - [2013-09-30](https://rubygems.org/gems/adhearsion-asr/versions/1.0.1)
   * Bugfix: A menu definition's block context is now available
 
 # [v1.0.0](https://github.com/adhearsion/adhearsion-asr/compare/0.1.0...1.0.0) - [2013-08-29](https://rubygems.org/gems/adhearsion-asr/versions/1.0.0)
