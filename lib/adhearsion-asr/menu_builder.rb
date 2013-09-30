@@ -72,6 +72,14 @@ module AdhearsionASR
       instance_eval(&block)
     end
 
+    def method_missing(method_name, *args, &block)
+      if @context
+        @context.send method_name, *args, &block
+      else
+        super
+      end
+    end
+
     def build_grammar
       raise ArgumentError, "You must specify one or more matches." if @matchers.count < 1
       matchers = @matchers
