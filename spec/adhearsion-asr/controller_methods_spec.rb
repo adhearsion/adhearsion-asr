@@ -608,6 +608,18 @@ module AdhearsionASR
             end
           end
 
+          let(:foo) { :bar }
+
+          it "makes the block context available" do
+            expect_component_execution expected_prompt
+            doo = nil
+            subject.menu prompts do
+              doo = foo
+              match(1) { do_nothing }
+            end
+            doo.should == :bar
+          end
+
           context "with interruptible: false" do
             let(:expected_barge_in) { false }
 

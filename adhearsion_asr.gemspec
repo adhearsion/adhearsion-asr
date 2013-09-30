@@ -10,6 +10,8 @@ Gem::Specification.new do |s|
   s.homepage    = "https://github.com/adhearsion/adhearsion-asr"
   s.summary     = %q{Adds speech recognition support to Adhearsion as a plugin}
   s.description = %q{Adds speech recognition support to Adhearsion as a plugin}
+  
+  s.license = 'MIT'
 
   s.rubyforge_project = "adhearsion-asr"
 
