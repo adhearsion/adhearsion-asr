@@ -528,6 +528,14 @@ module AdhearsionASR
                   result.utterance.should be == nil
                 end
               end
+
+              context "when requested via #response" do
+                let(:utterance) { 'foo' }
+
+                it "returns the utterance" do
+                  result.response.should be == 'foo'
+                end
+              end
             end
 
             context "with multiple digits separated by spaces" do

@@ -12,6 +12,11 @@ module AdhearsionASR
       self[:utterance] = mode == :dtmf ? parse_dtmf(other) : other
     end
 
+    def response
+      Adhearsion.deprecated "#utterance"
+      utterance
+    end
+
     private
 
     def parse_dtmf(dtmf)
