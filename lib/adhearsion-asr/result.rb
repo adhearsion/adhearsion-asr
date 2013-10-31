@@ -17,6 +17,10 @@ module AdhearsionASR
       utterance
     end
 
+    def match?
+      status == :match
+    end
+
     private
 
     def parse_dtmf(dtmf)

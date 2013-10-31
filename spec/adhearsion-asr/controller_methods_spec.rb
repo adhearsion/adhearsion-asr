@@ -456,6 +456,7 @@ module AdhearsionASR
 
             it "returns :match status and the utterance" do
               result.status.should be :match
+              result.should be_match
               result.mode.should be :dtmf
               result.confidence.should == 1
               result.utterance.should == '123'
@@ -552,6 +553,7 @@ module AdhearsionASR
 
             it "returns :nomatch status and a nil utterance" do
               result.status.should eql(:nomatch)
+              result.should_not be_match
               result.utterance.should be_nil
             end
           end
@@ -561,6 +563,7 @@ module AdhearsionASR
 
             it "returns :noinput status and a nil utterance" do
               result.status.should eql(:noinput)
+              result.should_not be_match
               result.utterance.should be_nil
             end
           end
@@ -570,6 +573,7 @@ module AdhearsionASR
 
             it "returns :hangup status and a nil utterance" do
               result.status.should eql(:hangup)
+              result.should_not be_match
               result.utterance.should be_nil
             end
           end
