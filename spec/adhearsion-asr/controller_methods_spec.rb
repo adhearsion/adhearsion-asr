@@ -122,6 +122,14 @@ module AdhearsionASR
             subject.ask prompts, limit: 5
           end
 
+          context "with no prompts" do
+            it "executes an Input component with the correct grammar" do
+              Punchblock::Component::Input.any_instance.stub complete_event: double(reason: reason)
+              expect_component_execution Punchblock::Component::Input.new(expected_input_options)
+              subject.ask limit: 5
+            end
+          end
+
           context "with a block passed" do
             it "executes but logs a warning about the block validator" do
               expect_component_execution expected_prompt

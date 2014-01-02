@@ -3,12 +3,6 @@ require 'adhearsion-asr/result'
 module AdhearsionASR
   class PromptBuilder
     def initialize(output_document, grammars, options)
-      output_options = {
-        render_document: {value: output_document},
-        renderer: Adhearsion.config.platform.media.default_renderer,
-        voice: Adhearsion.config.platform.media.default_voice
-      }.merge(options[:output_options] || {})
-
       input_options = {
         mode: :dtmf,
         initial_timeout: (options[:timeout] || Plugin.config.timeout) * 1000,
@@ -21,7 +15,17 @@ module AdhearsionASR
         terminator: options[:terminator]
       }.merge(options[:input_options] || {})
 
-      @prompt = Punchblock::Component::Prompt.new output_options, input_options, barge_in: options.has_key?(:interruptible) ? options[:interruptible] : true
+      @prompt = if output_document
+        output_options = {
+          render_document: {value: output_document},
+          renderer: Adhearsion.config.platform.media.default_renderer,
+          voice: Adhearsion.config.platform.media.default_voice
+        }.merge(options[:output_options] || {})
+
+        Punchblock::Component::Prompt.new output_options, input_options, barge_in: options.has_key?(:interruptible) ? options[:interruptible] : true
+      else
+        Punchblock::Component::Input.new input_options
+      end
     end
 
     def execute(controller)
