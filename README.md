@@ -77,7 +77,7 @@ class MyController < Adhearsion::CallController
       end
     end
 
-    result = ask grammar: grammar, input_options: { mode: :speech }
+    result = ask grammar: grammar, input_options: { mode: :voice }
     case result.status
     when :match
       speak "You said #{result.utterance}"
@@ -95,7 +95,7 @@ end
 ```ruby
 class MyController < Adhearsion::CallController
   def run
-    result = ask grammar_url: 'http://example.com/mygrammar.grxml', input_options: { mode: :speech }
+    result = ask grammar_url: 'http://example.com/mygrammar.grxml', input_options: { mode: :voice }
     case result.status
     when :match
       speak "You said #{result.utterance}"

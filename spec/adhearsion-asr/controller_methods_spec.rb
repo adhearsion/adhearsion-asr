@@ -122,6 +122,14 @@ module AdhearsionASR
             subject.ask prompts, limit: 5
           end
 
+          context "with no prompts" do
+            it "executes an Input component with the correct grammar" do
+              Punchblock::Component::Input.any_instance.stub complete_event: double(reason: reason)
+              expect_component_execution Punchblock::Component::Input.new(expected_input_options)
+              subject.ask limit: 5
+            end
+          end
+
           context "with a block passed" do
             it "executes but logs a warning about the block validator" do
               expect_component_execution expected_prompt
@@ -456,6 +464,7 @@ module AdhearsionASR
 
             it "returns :match status and the utterance" do
               result.status.should be :match
+              result.should be_match
               result.mode.should be :dtmf
               result.confidence.should == 1
               result.utterance.should == '123'
@@ -528,6 +537,14 @@ module AdhearsionASR
                   result.utterance.should be == nil
                 end
               end
+
+              context "when requested via #response" do
+                let(:utterance) { 'foo' }
+
+                it "returns the utterance" do
+                  result.response.should be == 'foo'
+                end
+              end
             end
 
             context "with multiple digits separated by spaces" do
@@ -544,6 +561,7 @@ module AdhearsionASR
 
             it "returns :nomatch status and a nil utterance" do
               result.status.should eql(:nomatch)
+              result.should_not be_match
               result.utterance.should be_nil
             end
           end
@@ -553,6 +571,7 @@ module AdhearsionASR
 
             it "returns :noinput status and a nil utterance" do
               result.status.should eql(:noinput)
+              result.should_not be_match
               result.utterance.should be_nil
             end
           end
@@ -562,6 +581,7 @@ module AdhearsionASR
 
             it "returns :hangup status and a nil utterance" do
               result.status.should eql(:hangup)
+              result.should_not be_match
               result.utterance.should be_nil
             end
           end
