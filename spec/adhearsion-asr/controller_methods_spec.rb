@@ -586,6 +586,16 @@ module AdhearsionASR
             end
           end
 
+          context "that is a stop" do
+            let(:reason) { Punchblock::Event::Complete::Stop.new }
+
+            it "returns :stop status and a nil utterance" do
+              result.status.should eql(:stop)
+              result.should_not be_match
+              result.utterance.should be_nil
+            end
+          end
+
           context "that is an error" do
             let(:reason) { Punchblock::Event::Complete::Error.new details: 'foobar' }
 
