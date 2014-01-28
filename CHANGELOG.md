@@ -1,4 +1,5 @@
 # [develop](https://github.com/adhearsion/adhearsion-asr)
+  * Bugfix: Handle stop completion reason smoothly
 
 # [v1.1.0](https://github.com/adhearsion/adhearsion-asr/compare/1.0.1...1.1.0) - [2014-01-02](https://rubygems.org/gems/adhearsion-asr/versions/1.1.0)
   * Feature: Alias `Result#response` to `#utterance`, with a deprecation warning

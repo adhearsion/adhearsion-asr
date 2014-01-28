@@ -54,6 +54,8 @@ module AdhearsionASR
           result.status = :noinput
         when Punchblock::Event::Complete::Hangup
           result.status = :hangup
+        when Punchblock::Event::Complete::Stop
+          result.status = :stop
         else
           raise "Unknown completion reason received: #{reason}"
         end
