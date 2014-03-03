@@ -84,7 +84,7 @@ module AdhearsionASR
       raise ArgumentError, "You must specify one or more matches." if @matchers.count < 1
       matchers = @matchers
 
-      RubySpeech::GRXML.draw mode: :dtmf, root: 'options', tag_format: 'semantics/1.0-literals' do
+      RubySpeech::GRXML.draw mode: (@options[:mode] || :dtmf), root: 'options', tag_format: 'semantics/1.0-literals' do
         rule id: 'options', scope: 'public' do
           item do
             one_of do

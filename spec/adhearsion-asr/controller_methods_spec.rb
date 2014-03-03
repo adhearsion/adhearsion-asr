@@ -813,6 +813,47 @@ module AdhearsionASR
             end
           end
 
+          context "when using ASR mode" do
+            before do
+              expected_input_options.merge! mode: :voice
+            end
+
+            let :expected_grxml do
+              RubySpeech::GRXML.draw mode: 'voice', root: 'options' do
+                rule id: 'options', scope: 'public' do
+                  item do
+                    one_of do
+                      item do
+                        tag { '0' }
+                        'Hello world'
+                      end
+                    end
+                  end
+                end
+              end
+            end
+
+            it "executes a Prompt with correct input mode, and the correct grammar mode" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts do
+                match("Hello world") {}
+              end
+            end
+          end
+
+          context "when the call is dead when trying to execute the prompt" do
+            before { call.terminate }
+
+            it "should raise Adhearsion::Call::Hangup" do
+              expect do
+                subject.menu prompts do
+                  match(1) {}
+                end
+              end.to raise_error Adhearsion::Call::Hangup
+            end
+          end
+
           context "when input completes with an error" do
             let(:reason) { Punchblock::Event::Complete::Error.new details: 'foobar' }
 

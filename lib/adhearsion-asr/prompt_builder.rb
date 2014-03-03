@@ -4,7 +4,7 @@ module AdhearsionASR
   class PromptBuilder
     def initialize(output_document, grammars, options)
       input_options = {
-        mode: :dtmf,
+        mode: options[:mode] || :dtmf,
         initial_timeout: (options[:timeout] || Plugin.config.timeout) * 1000,
         inter_digit_timeout: (options[:timeout] || Plugin.config.timeout) * 1000,
         max_silence: (options[:timeout] || Plugin.config.timeout) * 1000,
