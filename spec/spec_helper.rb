@@ -10,4 +10,8 @@ RSpec.configure do |config|
   config.run_all_when_everything_filtered = true
 
   config.backtrace_clean_patterns = [/rspec/]
+
+  config.before do
+    Punchblock.stub new_request_id: 'foo'
+  end
 end

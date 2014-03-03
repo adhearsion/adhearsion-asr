@@ -50,6 +50,7 @@ module AdhearsionASR
       end
 
       before do
+        Adhearsion::Plugin.configure_plugins
         Adhearsion::Plugin.init_plugins
       end
 
