@@ -439,6 +439,14 @@ module AdhearsionASR
           end
         end
 
+        context "when the call is dead when trying to execute the prompt" do
+          before { call.terminate }
+
+          it "should raise Adhearsion::Call::Hangup" do
+            expect { subject.ask prompts, limit: 5 }.to raise_error Adhearsion::Call::Hangup
+          end
+        end
+
         context "when a utterance is received" do
           let(:expected_grxml) { digit_limit_grammar }
 

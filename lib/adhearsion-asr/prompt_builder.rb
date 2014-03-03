@@ -32,6 +32,8 @@ module AdhearsionASR
       controller.execute_component_and_await_completion @prompt
 
       result @prompt.complete_event.reason
+    rescue Adhearsion::Call::ExpiredError
+      raise Adhearsion::Call::Hangup
     end
 
     private
