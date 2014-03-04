@@ -50,7 +50,7 @@ module AdhearsionASR
       end
 
       before do
-        Adhearsion::Plugin.configure_plugins
+        Adhearsion::Plugin.configure_plugins if Adhearsion::Plugin.respond_to?(:configure_plugins)
         Adhearsion::Plugin.init_plugins
       end
 
@@ -625,7 +625,7 @@ module AdhearsionASR
         context "with no matches" do
           it "should raise ArgumentError" do
             expect do
-              subject.menu do
+              subject.menu "Hello?" do
               end
             end.to raise_error(ArgumentError, /specify one or more matches/)
           end
@@ -819,7 +819,7 @@ module AdhearsionASR
             end
 
             let :expected_grxml do
-              RubySpeech::GRXML.draw mode: 'voice', root: 'options' do
+              RubySpeech::GRXML.draw mode: 'voice', root: 'options', tag_format: 'semantics/1.0-literals' do
                 rule id: 'options', scope: 'public' do
                   item do
                     one_of do
@@ -836,7 +836,7 @@ module AdhearsionASR
             it "executes a Prompt with correct input mode, and the correct grammar mode" do
               expect_component_execution expected_prompt
 
-              subject.menu prompts do
+              subject.menu prompts, mode: :voice do
                 match("Hello world") {}
               end
             end
