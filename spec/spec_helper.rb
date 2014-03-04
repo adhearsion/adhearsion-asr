@@ -12,6 +12,9 @@ RSpec.configure do |config|
   config.backtrace_clean_patterns = [/rspec/]
 
   config.before do
+    @current_datetime = DateTime.now
+    DateTime.stub now: @current_datetime
+
     Punchblock.stub new_request_id: 'foo'
   end
 end
