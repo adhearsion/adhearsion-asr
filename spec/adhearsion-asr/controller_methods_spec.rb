@@ -50,6 +50,7 @@ module AdhearsionASR
       end
 
       before do
+        Adhearsion::Plugin.configure_plugins if Adhearsion::Plugin.respond_to?(:configure_plugins)
         Adhearsion::Plugin.init_plugins
       end
 
@@ -438,6 +439,14 @@ module AdhearsionASR
           end
         end
 
+        context "when the call is dead when trying to execute the prompt" do
+          before { call.terminate }
+
+          it "should raise Adhearsion::Call::Hangup" do
+            expect { subject.ask prompts, limit: 5 }.to raise_error Adhearsion::Call::Hangup
+          end
+        end
+
         context "when a utterance is received" do
           let(:expected_grxml) { digit_limit_grammar }
 
@@ -616,7 +625,7 @@ module AdhearsionASR
         context "with no matches" do
           it "should raise ArgumentError" do
             expect do
-              subject.menu do
+              subject.menu "Hello?" do
               end
             end.to raise_error(ArgumentError, /specify one or more matches/)
           end
@@ -801,6 +810,47 @@ module AdhearsionASR
               subject.menu prompts, output_options: {max_time: 35000} do
                 match(1) {}
               end
+            end
+          end
+
+          context "when using ASR mode" do
+            before do
+              expected_input_options.merge! mode: :voice
+            end
+
+            let :expected_grxml do
+              RubySpeech::GRXML.draw mode: 'voice', root: 'options', tag_format: 'semantics/1.0-literals' do
+                rule id: 'options', scope: 'public' do
+                  item do
+                    one_of do
+                      item do
+                        tag { '0' }
+                        'Hello world'
+                      end
+                    end
+                  end
+                end
+              end
+            end
+
+            it "executes a Prompt with correct input mode, and the correct grammar mode" do
+              expect_component_execution expected_prompt
+
+              subject.menu prompts, mode: :voice do
+                match("Hello world") {}
+              end
+            end
+          end
+
+          context "when the call is dead when trying to execute the prompt" do
+            before { call.terminate }
+
+            it "should raise Adhearsion::Call::Hangup" do
+              expect do
+                subject.menu prompts do
+                  match(1) {}
+                end
+              end.to raise_error Adhearsion::Call::Hangup
             end
           end
 

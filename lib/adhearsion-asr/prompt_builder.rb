@@ -4,7 +4,7 @@ module AdhearsionASR
   class PromptBuilder
     def initialize(output_document, grammars, options)
       input_options = {
-        mode: :dtmf,
+        mode: options[:mode] || :dtmf,
         initial_timeout: (options[:timeout] || Plugin.config.timeout) * 1000,
         inter_digit_timeout: (options[:timeout] || Plugin.config.timeout) * 1000,
         max_silence: (options[:timeout] || Plugin.config.timeout) * 1000,
@@ -32,6 +32,8 @@ module AdhearsionASR
       controller.execute_component_and_await_completion @prompt
 
       result @prompt.complete_event.reason
+    rescue Adhearsion::Call::ExpiredError
+      raise Adhearsion::Call::Hangup
     end
 
     private

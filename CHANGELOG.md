@@ -1,5 +1,9 @@
 # [develop](https://github.com/adhearsion/adhearsion-asr)
 
+# [v1.2.0](https://github.com/adhearsion/adhearsion-asr/compare/1.1.1...1.2.0) - [2014-03-03](https://rubygems.org/gems/adhearsion-asr/versions/1.2.0)
+  * Feature: Allow setting `:mode` option to `:voice` for ASR menus
+  * Bugfix: Raise `Adhearsion::Hangup` to terminate controller execution when the call actor is dead
+
 # [v1.1.1](https://github.com/adhearsion/adhearsion-asr/compare/1.1.0...1.1.1) - [2014-01-28](https://rubygems.org/gems/adhearsion-asr/versions/1.1.1)
   * Bugfix: Handle stop completion reason smoothly
 

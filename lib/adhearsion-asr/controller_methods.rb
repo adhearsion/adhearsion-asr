@@ -94,6 +94,7 @@ module AdhearsionASR
     # @option options [Integer] :tries Number of tries allowed before failure
     # @option options [Integer] :timeout Timeout in seconds before the first and between each input digit
     # @option options [Boolean] :interruptible If the prompt should be interruptible or not. Defaults to true
+    # @option options [String, Symbol] :mode Input mode to accept. May be :voice or :dtmf.
     # @option options [Hash] :input_options A hash of options passed directly to the Punchblock Input constructor
     # @option options [Hash] :output_options A hash of options passed directly to the Punchblock Output constructor
     #
