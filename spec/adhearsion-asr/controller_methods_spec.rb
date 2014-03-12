@@ -17,19 +17,6 @@ module AdhearsionASR
         double call, write_command: true, id: call_id
       end
 
-      def expect_message_waiting_for_utterance(message, fail = false)
-        expectation = controller.should_receive(:write_and_await_utterance).with message
-        if fail
-          expectation.and_raise fail
-        else
-          expectation.and_return message
-        end
-      end
-
-      def expect_message_of_type_waiting_for_utterance(message)
-        controller.should_receive(:write_and_await_utterance).with(message.class).and_return message
-      end
-
       def expect_component_execution(component, fail = false)
         expectation = controller.should_receive(:execute_component_and_await_completion).ordered.with(component)
         if fail
