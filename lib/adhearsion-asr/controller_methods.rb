@@ -34,7 +34,7 @@ module AdhearsionASR
     #
     def ask(*args)
       options = args.last.kind_of?(Hash) ? args.pop : {}
-      prompts = args.flatten
+      prompts = args.flatten.compact
 
       if block_given?
         logger.warn "You passed a block to #ask, but this functionality is not available in adhearsion-asr. If you're looking for the block validator functionality, you should avoid using it in favour of grammars, and it is deprecated in Adhearsion Core."
@@ -106,11 +106,11 @@ module AdhearsionASR
     def menu(*args, &block)
       raise ArgumentError, "You must specify a block to build the menu" unless block
       options = args.last.kind_of?(Hash) ? args.pop : {}
-      prompts = args.flatten
+      prompts = args.flatten.compact
 
       menu_builder = MenuBuilder.new(options, &block)
 
-      output_document = output_formatter.ssml_for_collection(prompts)
+      output_document = prompts.empty? ? nil : output_formatter.ssml_for_collection(prompts)
 
       menu_builder.execute output_document, self
     end

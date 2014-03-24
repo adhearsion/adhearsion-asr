@@ -110,11 +110,28 @@ module AdhearsionASR
             subject.ask prompts, limit: 5
           end
 
+          context "with nil prompts" do
+            let(:prompts) { [nil, 'http://example.com/nice-to-meet-you.mp3', 'http://example.com/press-some-buttons.mp3'] }
+
+            it "executes a Prompt component with the correct prompts and grammar" do
+              expect_component_execution expected_prompt
+              subject.ask prompts, limit: 5
+            end
+          end
+
           context "with no prompts" do
             it "executes an Input component with the correct grammar" do
               Punchblock::Component::Input.any_instance.stub complete_event: double(reason: reason)
               expect_component_execution Punchblock::Component::Input.new(expected_input_options)
               subject.ask limit: 5
+            end
+          end
+
+          context "with only nil prompts" do
+            it "executes an Input component with the correct grammar" do
+              Punchblock::Component::Input.any_instance.stub complete_event: double(reason: reason)
+              expect_component_execution Punchblock::Component::Input.new(expected_input_options)
+              subject.ask nil, limit: 5
             end
           end
 
@@ -644,6 +661,37 @@ module AdhearsionASR
               match(1) { do_nothing }
             end
             doo.should == :bar
+          end
+
+          context "with nil prompts" do
+            let(:prompts) { [nil, 'http://example.com/nice-to-meet-you.mp3', 'http://example.com/press-some-buttons.mp3'] }
+
+            it "executes a Prompt component with the correct prompts and grammar" do
+              expect_component_execution expected_prompt
+              subject.menu prompts do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with no prompts" do
+            it "executes an Input component with the correct grammar" do
+              Punchblock::Component::Input.any_instance.stub complete_event: double(reason: reason)
+              expect_component_execution Punchblock::Component::Input.new(expected_input_options)
+              subject.menu do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with only nil prompts" do
+            it "executes an Input component with the correct grammar" do
+              Punchblock::Component::Input.any_instance.stub complete_event: double(reason: reason)
+              expect_component_execution Punchblock::Component::Input.new(expected_input_options)
+              subject.menu nil do
+                match(1) {}
+              end
+            end
           end
 
           context "with interruptible: false" do
