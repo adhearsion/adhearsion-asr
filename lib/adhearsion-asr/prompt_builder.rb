@@ -6,8 +6,6 @@ module AdhearsionASR
       input_options = {
         mode: options[:mode] || :dtmf,
         initial_timeout: (options[:timeout] || Plugin.config.timeout) * 1000,
-        inter_digit_timeout: (options[:timeout] || Plugin.config.timeout) * 1000,
-        max_silence: (options[:timeout] || Plugin.config.timeout) * 1000,
         min_confidence: Plugin.config.min_confidence,
         grammars: grammars,
         recognizer: Plugin.config.recognizer,

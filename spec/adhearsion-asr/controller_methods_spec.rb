@@ -61,8 +61,6 @@ module AdhearsionASR
         {
           mode: :dtmf,
           initial_timeout: 5000,
-          inter_digit_timeout: 5000,
-          max_silence: 5000,
           min_confidence: 0.5,
           recognizer: nil,
           language: 'en-US',
@@ -305,9 +303,7 @@ module AdhearsionASR
           let(:expected_grxml) { digit_limit_grammar }
 
           before do
-            expected_input_options.merge! initial_timeout: 10000,
-              inter_digit_timeout: 10000,
-              max_silence: 10000
+            expected_input_options.merge! initial_timeout: 10000
           end
 
           it "executes a Prompt with correct timeout (initial, inter-digit & max-silence)" do
@@ -321,9 +317,7 @@ module AdhearsionASR
           let(:expected_grxml) { digit_limit_grammar }
 
           before do
-            expected_input_options.merge! initial_timeout: 10000,
-              inter_digit_timeout: 10000,
-              max_silence: 10000
+            expected_input_options.merge! initial_timeout: 10000
           end
 
           temp_config_value :timeout, 10
@@ -708,9 +702,7 @@ module AdhearsionASR
 
           context "with a timeout specified" do
             before do
-              expected_input_options.merge! initial_timeout: 10000,
-                inter_digit_timeout: 10000,
-                max_silence: 10000
+              expected_input_options.merge! initial_timeout: 10000
             end
 
             it "executes a Prompt with correct timeout (initial, inter-digit & max-silence)" do
@@ -724,9 +716,7 @@ module AdhearsionASR
 
           context "with a different default timeout" do
             before do
-              expected_input_options.merge! initial_timeout: 10000,
-                inter_digit_timeout: 10000,
-                max_silence: 10000
+              expected_input_options.merge! initial_timeout: 10000
             end
 
             temp_config_value :timeout, 10
