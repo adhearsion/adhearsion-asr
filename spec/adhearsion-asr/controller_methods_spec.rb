@@ -478,7 +478,7 @@ module AdhearsionASR
               result.confidence.should == 1
               result.utterance.should == '123'
               result.interpretation.should == 'Foo'
-              result.nlsml.should == nlsml.root
+              result.nlsml.should == nlsml
             end
 
             context "with speech input" do
