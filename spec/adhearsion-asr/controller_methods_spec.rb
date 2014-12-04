@@ -317,6 +317,22 @@ module AdhearsionASR
           end
         end
 
+        context "with a negative timeout specified" do
+          let(:expected_grxml) { digit_limit_grammar }
+
+          before do
+            expected_input_options.merge! initial_timeout: -1,
+              inter_digit_timeout: -1,
+              max_silence: -1
+          end
+
+          it "executes a Prompt with correct timeout (initial, inter-digit & max-silence)" do
+            expect_component_execution expected_prompt
+
+            subject.ask prompts, limit: 5, timeout: -1
+          end
+        end
+
         context "with a different default timeout" do
           let(:expected_grxml) { digit_limit_grammar }
 

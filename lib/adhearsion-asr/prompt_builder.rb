@@ -5,9 +5,9 @@ module AdhearsionASR
     def initialize(output_document, grammars, options)
       input_options = {
         mode: options[:mode] || :dtmf,
-        initial_timeout: (options[:timeout] || Plugin.config.timeout) * 1000,
-        inter_digit_timeout: (options[:timeout] || Plugin.config.timeout) * 1000,
-        max_silence: (options[:timeout] || Plugin.config.timeout) * 1000,
+        initial_timeout: timeout(options[:timeout] || Plugin.config.timeout),
+        inter_digit_timeout: timeout(options[:timeout] || Plugin.config.timeout),
+        max_silence: timeout(options[:timeout] || Plugin.config.timeout),
         min_confidence: Plugin.config.min_confidence,
         grammars: grammars,
         recognizer: Plugin.config.recognizer,
@@ -63,6 +63,10 @@ module AdhearsionASR
         end
         logger.debug "Ask completed with result #{result.inspect}"
       end
+    end
+
+    def timeout(value)
+      value > 0 ? value * 1000 : value
     end
   end
 end

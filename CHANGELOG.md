@@ -1,5 +1,6 @@
 # [develop](https://github.com/adhearsion/adhearsion-asr)
   * Bugfix: Correctly handle nil prompts
+  * Feature: Allow disabling timeouts with -1
 
 # [v1.2.0](https://github.com/adhearsion/adhearsion-asr/compare/1.1.1...1.2.0) - [2014-03-03](https://rubygems.org/gems/adhearsion-asr/versions/1.2.0)
   * Feature: Allow setting `:mode` option to `:voice` for ASR menus
