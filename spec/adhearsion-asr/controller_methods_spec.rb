@@ -17,19 +17,6 @@ module AdhearsionASR
         double call, write_command: true, id: call_id
       end
 
-      def expect_message_waiting_for_utterance(message, fail = false)
-        expectation = controller.should_receive(:write_and_await_utterance).with message
-        if fail
-          expectation.and_raise fail
-        else
-          expectation.and_return message
-        end
-      end
-
-      def expect_message_of_type_waiting_for_utterance(message)
-        controller.should_receive(:write_and_await_utterance).with(message.class).and_return message
-      end
-
       def expect_component_execution(component, fail = false)
         expectation = controller.should_receive(:execute_component_and_await_completion).ordered.with(component)
         if fail
@@ -123,11 +110,28 @@ module AdhearsionASR
             subject.ask prompts, limit: 5
           end
 
+          context "with nil prompts" do
+            let(:prompts) { [nil, 'http://example.com/nice-to-meet-you.mp3', 'http://example.com/press-some-buttons.mp3'] }
+
+            it "executes a Prompt component with the correct prompts and grammar" do
+              expect_component_execution expected_prompt
+              subject.ask prompts, limit: 5
+            end
+          end
+
           context "with no prompts" do
             it "executes an Input component with the correct grammar" do
               Punchblock::Component::Input.any_instance.stub complete_event: double(reason: reason)
               expect_component_execution Punchblock::Component::Input.new(expected_input_options)
               subject.ask limit: 5
+            end
+          end
+
+          context "with only nil prompts" do
+            it "executes an Input component with the correct grammar" do
+              Punchblock::Component::Input.any_instance.stub complete_event: double(reason: reason)
+              expect_component_execution Punchblock::Component::Input.new(expected_input_options)
+              subject.ask nil, limit: 5
             end
           end
 
@@ -313,6 +317,22 @@ module AdhearsionASR
           end
         end
 
+        context "with a negative timeout specified" do
+          let(:expected_grxml) { digit_limit_grammar }
+
+          before do
+            expected_input_options.merge! initial_timeout: -1,
+              inter_digit_timeout: -1,
+              max_silence: -1
+          end
+
+          it "executes a Prompt with correct timeout (initial, inter-digit & max-silence)" do
+            expect_component_execution expected_prompt
+
+            subject.ask prompts, limit: 5, timeout: -1
+          end
+        end
+
         context "with a different default timeout" do
           let(:expected_grxml) { digit_limit_grammar }
 
@@ -478,7 +498,7 @@ module AdhearsionASR
               result.confidence.should == 1
               result.utterance.should == '123'
               result.interpretation.should == 'Foo'
-              result.nlsml.should == nlsml.root
+              result.nlsml.should == nlsml
             end
 
             context "with speech input" do
@@ -657,6 +677,37 @@ module AdhearsionASR
               match(1) { do_nothing }
             end
             doo.should == :bar
+          end
+
+          context "with nil prompts" do
+            let(:prompts) { [nil, 'http://example.com/nice-to-meet-you.mp3', 'http://example.com/press-some-buttons.mp3'] }
+
+            it "executes a Prompt component with the correct prompts and grammar" do
+              expect_component_execution expected_prompt
+              subject.menu prompts do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with no prompts" do
+            it "executes an Input component with the correct grammar" do
+              Punchblock::Component::Input.any_instance.stub complete_event: double(reason: reason)
+              expect_component_execution Punchblock::Component::Input.new(expected_input_options)
+              subject.menu do
+                match(1) {}
+              end
+            end
+          end
+
+          context "with only nil prompts" do
+            it "executes an Input component with the correct grammar" do
+              Punchblock::Component::Input.any_instance.stub complete_event: double(reason: reason)
+              expect_component_execution Punchblock::Component::Input.new(expected_input_options)
+              subject.menu nil do
+                match(1) {}
+              end
+            end
           end
 
           context "with interruptible: false" do
