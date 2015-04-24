@@ -1,4 +1,6 @@
 # [develop](https://github.com/adhearsion/adhearsion-asr)
+
+# [v1.3.0](https://github.com/adhearsion/adhearsion-asr/compare/1.2.0...1.3.0) - [2015-04-24](https://rubygems.org/gems/adhearsion-asr/versions/1.3.0)
   * Bugfix: Correctly handle nil prompts
   * Feature: Allow disabling timeouts with -1
 
