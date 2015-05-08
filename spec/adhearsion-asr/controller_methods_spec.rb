@@ -61,7 +61,7 @@ module AdhearsionASR
         {
           mode: :dtmf,
           initial_timeout: 5000,
-          inter_digit_timeout: 5000,
+          inter_digit_timeout: 2000,
           max_silence: 5000,
           min_confidence: 0.5,
           recognizer: nil,
@@ -306,7 +306,7 @@ module AdhearsionASR
 
           before do
             expected_input_options.merge! initial_timeout: 10000,
-              inter_digit_timeout: 10000,
+              inter_digit_timeout: 2000,
               max_silence: 10000
           end
 
@@ -329,7 +329,7 @@ module AdhearsionASR
           it "executes a Prompt with correct timeout (initial, inter-digit & max-silence)" do
             expect_component_execution expected_prompt
 
-            subject.ask prompts, limit: 5, timeout: -1
+            subject.ask prompts, limit: 5, timeout: -1, inter_digit_timeout: -1
           end
         end
 
@@ -338,7 +338,7 @@ module AdhearsionASR
 
           before do
             expected_input_options.merge! initial_timeout: 10000,
-              inter_digit_timeout: 10000,
+              inter_digit_timeout: 2000,
               max_silence: 10000
           end
 
@@ -732,7 +732,7 @@ module AdhearsionASR
             it "executes a Prompt with correct timeout (initial, inter-digit & max-silence)" do
               expect_component_execution expected_prompt
 
-              subject.menu prompts, timeout: 10 do
+              subject.menu prompts, timeout: 10, inter_digit_timeout: 10 do
                 match(1) {}
               end
             end
@@ -746,6 +746,7 @@ module AdhearsionASR
             end
 
             temp_config_value :timeout, 10
+            temp_config_value :inter_digit_timeout, 10
 
             it "executes a Prompt with correct timeout (initial, inter-digit & max-silence)" do
               expect_component_execution expected_prompt
