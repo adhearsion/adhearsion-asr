@@ -13,8 +13,8 @@ RSpec.configure do |config|
 
   config.before do
     @current_datetime = DateTime.now
-    DateTime.stub now: @current_datetime
+    allow(DateTime).to receive(:now).and_return(@current_datetime)
 
-    Punchblock.stub new_request_id: 'foo'
+    allow(Punchblock).to receive(:new_request_id).and_return('foo')
   end
 end

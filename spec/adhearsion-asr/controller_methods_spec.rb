@@ -18,7 +18,7 @@ module AdhearsionASR
       end
 
       def expect_component_execution(component, fail = false)
-        expectation = controller.should_receive(:execute_component_and_await_completion).ordered.with(component)
+        expectation = expect(controller).to receive(:execute_component_and_await_completion).ordered.with(component)
         if fail
           expectation.and_raise fail
         else
@@ -78,7 +78,7 @@ module AdhearsionASR
 
       let(:reason) { Punchblock::Component::Input::Complete::NoMatch.new }
 
-      before { Punchblock::Component::Prompt.any_instance.stub complete_event: double(reason: reason) }
+      before { allow_any_instance_of(Punchblock::Component::Prompt).to receive(:complete_event).and_return(double(reason: reason)) }
 
       describe "#ask" do
         let :digit_limit_grammar do
@@ -121,7 +121,7 @@ module AdhearsionASR
 
           context "with no prompts" do
             it "executes an Input component with the correct grammar" do
-              Punchblock::Component::Input.any_instance.stub complete_event: double(reason: reason)
+              allow_any_instance_of(Punchblock::Component::Input).to receive(:complete_event).and_return(double(reason: reason))
               expect_component_execution Punchblock::Component::Input.new(expected_input_options)
               subject.ask limit: 5
             end
@@ -136,7 +136,7 @@ module AdhearsionASR
             end
 
             it "executes an Input component with the correct grammar" do
-              Punchblock::Component::Input.any_instance.stub complete_event: double(reason: reason)
+              allow_any_instance_of(Punchblock::Component::Input).to receive(:complete_event).and_return(double(reason: reason))
               expect_component_execution expected_prompt
               subject.ask limit: 5, render_document: {url: 'http://foo.com/bar'}
             end
@@ -144,7 +144,7 @@ module AdhearsionASR
 
           context "with only nil prompts" do
             it "executes an Input component with the correct grammar" do
-              Punchblock::Component::Input.any_instance.stub complete_event: double(reason: reason)
+              allow_any_instance_of(Punchblock::Component::Input).to receive(:complete_event).and_return(double(reason: reason))
               expect_component_execution Punchblock::Component::Input.new(expected_input_options)
               subject.ask nil, limit: 5
             end
@@ -153,9 +153,9 @@ module AdhearsionASR
           context "with a block passed" do
             it "executes but logs a warning about the block validator" do
               expect_component_execution expected_prompt
-              call.logger.should_receive(:warn).with(/validator/)
+              expect(call.logger).to receive(:warn).with(/validator/)
               target = double
-              target.should_receive(:foo).never
+              expect(target).to receive(:foo).never
 
               subject.ask prompts, limit: 5 do |buffer|
                 target.foo
@@ -507,13 +507,13 @@ module AdhearsionASR
             let(:reason) { Punchblock::Component::Input::Complete::Match.new nlsml: nlsml }
 
             it "returns :match status and the utterance" do
-              result.status.should be :match
-              result.should be_match
-              result.mode.should be :dtmf
-              result.confidence.should == 1
-              result.utterance.should == '123'
-              result.interpretation.should == 'Foo'
-              result.nlsml.should == nlsml
+              expect(result.status).to be :match
+              expect(result).to be_match
+              expect(result.mode).to be :dtmf
+              expect(result.confidence).to eq(1)
+              expect(result.utterance).to eq('123')
+              expect(result.interpretation).to eq('Foo')
+              expect(result.nlsml).to eq(nlsml)
             end
 
             context "with speech input" do
@@ -521,7 +521,7 @@ module AdhearsionASR
               let(:utterance) { 'Hello world' }
 
               it "should not alter the utterance" do
-                result.utterance.should == 'Hello world'
+                expect(result.utterance).to eq('Hello world')
               end
             end
 
@@ -530,7 +530,7 @@ module AdhearsionASR
                 let(:utterance) { 'dtmf-3' }
 
                 it "removes dtmf- previxes" do
-                  result.utterance.should be == '3'
+                  expect(result.utterance).to eq('3')
                 end
               end
 
@@ -538,7 +538,7 @@ module AdhearsionASR
                 let(:utterance) { "dtmf-star" }
 
                 it "interprets as *" do
-                  result.utterance.should be == '*'
+                  expect(result.utterance).to eq('*')
                 end
               end
 
@@ -546,7 +546,7 @@ module AdhearsionASR
                 let(:utterance) { '*' }
 
                 it "interprets as *" do
-                  result.utterance.should be == '*'
+                  expect(result.utterance).to eq('*')
                 end
               end
 
@@ -554,7 +554,7 @@ module AdhearsionASR
                 let(:utterance) { 'dtmf-pound' }
 
                 it "interprets pound as #" do
-                  result.utterance.should be == '#'
+                  expect(result.utterance).to eq('#')
                 end
               end
 
@@ -562,7 +562,7 @@ module AdhearsionASR
                 let(:utterance) { '#' }
 
                 it "interprets # as #" do
-                  result.utterance.should be == '#'
+                  expect(result.utterance).to eq('#')
                 end
               end
 
@@ -570,7 +570,7 @@ module AdhearsionASR
                 let(:utterance) { '1' }
 
                 it "correctly interprets the digits" do
-                  result.utterance.should be == '1'
+                  expect(result.utterance).to eq('1')
                 end
               end
 
@@ -578,7 +578,7 @@ module AdhearsionASR
                 let(:utterance) { nil }
 
                 it "is nil when utterance is nil" do
-                  result.utterance.should be == nil
+                  expect(result.utterance).to eq(nil)
                 end
               end
 
@@ -586,7 +586,7 @@ module AdhearsionASR
                 let(:utterance) { 'foo' }
 
                 it "returns the utterance" do
-                  result.response.should be == 'foo'
+                  expect(result.response).to eq('foo')
                 end
               end
             end
@@ -595,7 +595,7 @@ module AdhearsionASR
               let(:utterance) { '1 dtmf-5 dtmf-star # 2' }
 
               it "returns the digits without space separation" do
-                result.utterance.should be == '15*#2'
+                expect(result.utterance).to eq('15*#2')
               end
             end
           end
@@ -604,9 +604,9 @@ module AdhearsionASR
             let(:reason) { Punchblock::Component::Input::Complete::NoMatch.new }
 
             it "returns :nomatch status and a nil utterance" do
-              result.status.should eql(:nomatch)
-              result.should_not be_match
-              result.utterance.should be_nil
+              expect(result.status).to eql(:nomatch)
+              expect(result).not_to be_match
+              expect(result.utterance).to be_nil
             end
           end
 
@@ -614,9 +614,9 @@ module AdhearsionASR
             let(:reason) { Punchblock::Component::Input::Complete::NoInput.new }
 
             it "returns :noinput status and a nil utterance" do
-              result.status.should eql(:noinput)
-              result.should_not be_match
-              result.utterance.should be_nil
+              expect(result.status).to eql(:noinput)
+              expect(result).not_to be_match
+              expect(result.utterance).to be_nil
             end
           end
 
@@ -624,9 +624,9 @@ module AdhearsionASR
             let(:reason) { Punchblock::Event::Complete::Hangup.new }
 
             it "returns :hangup status and a nil utterance" do
-              result.status.should eql(:hangup)
-              result.should_not be_match
-              result.utterance.should be_nil
+              expect(result.status).to eql(:hangup)
+              expect(result).not_to be_match
+              expect(result.utterance).to be_nil
             end
           end
 
@@ -634,9 +634,9 @@ module AdhearsionASR
             let(:reason) { Punchblock::Event::Complete::Stop.new }
 
             it "returns :stop status and a nil utterance" do
-              result.status.should eql(:stop)
-              result.should_not be_match
-              result.utterance.should be_nil
+              expect(result.status).to eql(:stop)
+              expect(result).not_to be_match
+              expect(result.utterance).to be_nil
             end
           end
 
@@ -691,7 +691,7 @@ module AdhearsionASR
               doo = foo
               match(1) { do_nothing }
             end
-            doo.should == :bar
+            expect(doo).to eq(:bar)
           end
 
           context "with nil prompts" do
@@ -707,7 +707,7 @@ module AdhearsionASR
 
           context "with no prompts" do
             it "executes an Input component with the correct grammar" do
-              Punchblock::Component::Input.any_instance.stub complete_event: double(reason: reason)
+              allow_any_instance_of(Punchblock::Component::Input).to receive(:complete_event).and_return(double(reason: reason))
               expect_component_execution Punchblock::Component::Input.new(expected_input_options)
               subject.menu do
                 match(1) {}
@@ -717,7 +717,7 @@ module AdhearsionASR
 
           context "with only nil prompts" do
             it "executes an Input component with the correct grammar" do
-              Punchblock::Component::Input.any_instance.stub complete_event: double(reason: reason)
+              allow_any_instance_of(Punchblock::Component::Input).to receive(:complete_event).and_return(double(reason: reason))
               expect_component_execution Punchblock::Component::Input.new(expected_input_options)
               subject.menu nil do
                 match(1) {}
@@ -938,8 +938,8 @@ module AdhearsionASR
           context "when input doesn't match any of the specified matches" do
             it "runs the invalid and failure handlers" do
               expect_component_execution expected_prompt
-              should_receive(:do_something_on_invalid).once.ordered
-              should_receive(:do_something_on_failure).once.ordered
+              expect(self).to receive(:do_something_on_invalid).once.ordered
+              expect(self).to receive(:do_something_on_failure).once.ordered
 
               subject.menu prompts do
                 match(1) {}
@@ -965,12 +965,12 @@ module AdhearsionASR
                 some_controller_class = Class.new Adhearsion::CallController
 
                 expect_component_execution(expected_prompt).twice
-                should_receive(:do_something_on_invalid).once.ordered
-                should_receive(:invoke).once.with(some_controller_class, extension: '1').ordered
-                should_receive(:do_something_on_failure).never
+                expect(self).to receive(:do_something_on_invalid).once.ordered
+                expect(self).to receive(:invoke).once.with(some_controller_class, extension: '1').ordered
+                expect(self).to receive(:do_something_on_failure).never
 
                 invocation_count = 0
-                Punchblock::Component::Prompt.any_instance.stub(:complete_event) do
+                allow_any_instance_of(Punchblock::Component::Prompt).to receive(:complete_event) do
                   invocation_count += 1
                   case invocation_count
                   when 1 then double(reason: reason)
@@ -994,8 +994,8 @@ module AdhearsionASR
 
             it "runs the timeout and failure handlers" do
               expect_component_execution expected_prompt
-              should_receive(:do_something_on_timeout).once.ordered
-              should_receive(:do_something_on_failure).once.ordered
+              expect(self).to receive(:do_something_on_timeout).once.ordered
+              expect(self).to receive(:do_something_on_failure).once.ordered
 
               subject.menu prompts do
                 match(1) {}
@@ -1021,12 +1021,12 @@ module AdhearsionASR
                 some_controller_class = Class.new Adhearsion::CallController
 
                 expect_component_execution(expected_prompt).twice
-                should_receive(:do_something_on_timeout).once.ordered
-                should_receive(:invoke).once.with(some_controller_class, extension: '1').ordered
-                should_receive(:do_something_on_failure).never
+                expect(self).to receive(:do_something_on_timeout).once.ordered
+                expect(self).to receive(:invoke).once.with(some_controller_class, extension: '1').ordered
+                expect(self).to receive(:do_something_on_failure).never
 
                 invocation_count = 0
-                Punchblock::Component::Prompt.any_instance.stub(:complete_event) do
+                allow_any_instance_of(Punchblock::Component::Prompt).to receive(:complete_event) do
                   invocation_count += 1
                   case invocation_count
                   when 1 then double(reason: reason)
@@ -1085,7 +1085,7 @@ module AdhearsionASR
                 some_controller_class = Class.new Adhearsion::CallController
 
                 expect_component_execution expected_prompt
-                should_receive(:invoke).once.with(some_controller_class, extension: '3')
+                expect(self).to receive(:invoke).once.with(some_controller_class, extension: '3')
 
                 subject.menu prompts do
                   match(2) {}
@@ -1098,7 +1098,7 @@ module AdhearsionASR
             context "which specifies a block to be run" do
               it "invokes the block, passing in the input that matched" do
                 expect_component_execution expected_prompt
-                should_receive(:do_something_on_match).once.with('3')
+                expect(self).to receive(:do_something_on_match).once.with('3')
 
                 subject.menu prompts do
                   match(2) {}
@@ -1137,7 +1137,7 @@ module AdhearsionASR
 
               it "invokes the match payload" do
                 expect_component_execution expected_prompt
-                should_receive(:do_something_on_match).once.with('3')
+                expect(self).to receive(:do_something_on_match).once.with('3')
 
                 subject.menu prompts do
                   match(0) {}
@@ -1176,7 +1176,7 @@ module AdhearsionASR
 
               it "invokes the match payload" do
                 expect_component_execution expected_prompt
-                should_receive(:do_something_on_match).once.with('3')
+                expect(self).to receive(:do_something_on_match).once.with('3')
 
                 subject.menu prompts do
                   match(0) {}
@@ -1215,7 +1215,7 @@ module AdhearsionASR
 
               it "invokes the match payload" do
                 expect_component_execution expected_prompt
-                should_receive(:do_something_on_match).once.with('3')
+                expect(self).to receive(:do_something_on_match).once.with('3')
 
                 subject.menu prompts do
                   match(0) {}
@@ -1260,8 +1260,8 @@ module AdhearsionASR
 
             it "executes the first successful match" do
               expect_component_execution expected_prompt
-              should_receive(:do_something_on_match).once.with('1')
-              should_receive(:do_otherthing_on_match).never
+              expect(self).to receive(:do_something_on_match).once.with('1')
+              expect(self).to receive(:do_otherthing_on_match).never
 
               subject.menu prompts do
                 match(1) { |v| do_something_on_match v }
