@@ -127,6 +127,21 @@ module AdhearsionASR
             end
           end
 
+          context "with no prompts, but with a render_document option" do
+            let :expected_output_options do
+              {
+                render_document: {url: 'http://foo.com/bar'},
+                renderer: nil
+              }
+            end
+
+            it "executes an Input component with the correct grammar" do
+              Punchblock::Component::Input.any_instance.stub complete_event: double(reason: reason)
+              expect_component_execution expected_prompt
+              subject.ask limit: 5, render_document: {url: 'http://foo.com/bar'}
+            end
+          end
+
           context "with only nil prompts" do
             it "executes an Input component with the correct grammar" do
               Punchblock::Component::Input.any_instance.stub complete_event: double(reason: reason)
