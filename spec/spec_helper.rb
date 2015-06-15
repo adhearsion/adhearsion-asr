@@ -2,19 +2,19 @@ require 'adhearsion'
 require 'adhearsion-asr'
 
 RSpec.configure do |config|
-  config.color_enabled = true
+  config.color = true
   config.tty = true
 
   config.mock_with :rspec
   config.filter_run :focus => true
   config.run_all_when_everything_filtered = true
 
-  config.backtrace_clean_patterns = [/rspec/]
+  config.backtrace_exclusion_patterns = [/rspec/]
 
   config.before do
     @current_datetime = DateTime.now
-    DateTime.stub now: @current_datetime
+    allow(DateTime).to receive(:now).and_return(@current_datetime)
 
-    Punchblock.stub new_request_id: 'foo'
+    allow(Punchblock).to receive(:new_request_id).and_return('foo')
   end
 end

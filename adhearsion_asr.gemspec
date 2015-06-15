@@ -24,7 +24,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency %q<ruby_speech>, ["~> 2.1"]
 
   s.add_development_dependency %q<bundler>, ["~> 1.0"]
-  s.add_development_dependency %q<rspec>, ["~> 2.5"]
+  s.add_development_dependency %q<rspec>, ["~> 3.0"]
   s.add_development_dependency %q<rake>, [">= 0"]
   s.add_development_dependency %q<guard-rspec>
   s.add_development_dependency %q<rb-fsevent>, ['~> 0.9']

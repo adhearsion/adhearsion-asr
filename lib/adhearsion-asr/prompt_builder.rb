@@ -6,7 +6,7 @@ module AdhearsionASR
       input_options = {
         mode: options[:mode] || :dtmf,
         initial_timeout: timeout(options[:timeout] || Plugin.config.timeout),
-        inter_digit_timeout: timeout(options[:timeout] || Plugin.config.timeout),
+        inter_digit_timeout: timeout(options[:inter_digit_timeout] || Plugin.config.inter_digit_timeout),
         max_silence: timeout(options[:timeout] || Plugin.config.timeout),
         min_confidence: Plugin.config.min_confidence,
         grammars: grammars,
@@ -15,9 +15,9 @@ module AdhearsionASR
         terminator: options[:terminator]
       }.merge(options[:input_options] || {})
 
-      @prompt = if output_document
+      @prompt = if output_document || options[:render_document]
         output_options = {
-          render_document: {value: output_document},
+          render_document: options[:render_document] || {value: output_document},
           renderer: Adhearsion.config.platform.media.default_renderer,
           voice: Adhearsion.config.platform.media.default_voice
         }.merge(options[:output_options] || {})
