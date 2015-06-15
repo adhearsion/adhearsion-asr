@@ -15,9 +15,9 @@ module AdhearsionASR
         terminator: options[:terminator]
       }.merge(options[:input_options] || {})
 
-      @prompt = if output_document
+      @prompt = if output_document || options[:render_document]
         output_options = {
-          render_document: {value: output_document},
+          render_document: options[:render_document] || {value: output_document},
           renderer: Adhearsion.config.platform.media.default_renderer,
           voice: Adhearsion.config.platform.media.default_voice
         }.merge(options[:output_options] || {})
