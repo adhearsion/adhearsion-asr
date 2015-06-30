@@ -9,6 +9,7 @@ module AdhearsionASR
         inter_digit_timeout: timeout(options[:inter_digit_timeout] || Plugin.config.inter_digit_timeout),
         max_silence: timeout(options[:timeout] || Plugin.config.timeout),
         min_confidence: Plugin.config.min_confidence,
+        sensitivity: Plugin.config.sensitivity,
         grammars: grammars,
         recognizer: Plugin.config.recognizer,
         language: Plugin.config.input_language,
