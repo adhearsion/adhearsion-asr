@@ -1,4 +1,6 @@
 # [develop](https://github.com/adhearsion/adhearsion-asr)
+
+# [v1.5.0](https://github.com/adhearsion/adhearsion-asr/compare/1.4.0...1.5.0) - [2015-06-30](https://rubygems.org/gems/adhearsion-asr/versions/1.5.0)
   * Feature: Allow setting recognition sensitivity via configuration
 
 # [v1.4.0](https://github.com/adhearsion/adhearsion-asr/compare/1.3.0...1.4.0) - [2015-06-15](https://rubygems.org/gems/adhearsion-asr/versions/1.4.0)
