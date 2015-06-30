@@ -64,6 +64,7 @@ module AdhearsionASR
           inter_digit_timeout: 2000,
           max_silence: 5000,
           min_confidence: 0.5,
+          sensitivity: 0.5,
           recognizer: nil,
           language: 'en-US',
           grammar: { value: expected_grxml }
@@ -376,6 +377,22 @@ module AdhearsionASR
           temp_config_value :min_confidence, 0.8
 
           it "executes a Prompt with correct minimum confidence" do
+            expect_component_execution expected_prompt
+
+            subject.ask prompts, limit: 5
+          end
+        end
+
+        context "with a different default sensitivity" do
+          let(:expected_grxml) { digit_limit_grammar }
+
+          before do
+            expected_input_options.merge! sensitivity: 0.8
+          end
+
+          temp_config_value :sensitivity, 0.8
+
+          it "executes a Prompt with correct sensitivity" do
             expect_component_execution expected_prompt
 
             subject.ask prompts, limit: 5
